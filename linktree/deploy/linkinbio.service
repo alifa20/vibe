@@ -1,0 +1,45 @@
+# /etc/systemd/system/linkinbio.service
+#
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now linkinbio
+#   sudo systemctl status linkinbio
+#   journalctl -u linkinbio -f
+
+[Unit]
+Description=link-in-bio page with first-party click tracking
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=linkinbio
+Group=linkinbio
+WorkingDirectory=/srv/linkinbio
+ExecStart=/usr/bin/node server.mjs
+Restart=always
+RestartSec=3
+
+# .env holds STATS_PASS and HASH_SALT.
+EnvironmentFile=/srv/linkinbio/.env
+
+# Hardening. The app needs to read the project and write one log file.
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=no
+ReadWritePaths=/srv/linkinbio/data
+
+# The clicks log grows forever otherwise; see logrotate.conf in this directory.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

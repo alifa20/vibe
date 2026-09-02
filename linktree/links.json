@@ -1,0 +1,15 @@
+{
+  "name": "Ali Fathieh",
+  "bio": "Software engineer at Karbon. I build workflow tools for accounting teams and write about the parts that turned out harder than expected.",
+  "avatar": "/avatar.svg",
+  "siteUrl": "https://links.example.com",
+  "links": [
+    { "title": "Writing",      "url": "https://yourdomain.com/writing",                    "emoji": "✍️" },
+    { "title": "GitHub",       "url": "https://github.com/yourhandle",                     "emoji": "🐙" },
+    { "title": "Bluesky",      "url": "https://bsky.app/profile/yourhandle.bsky.social",   "emoji": "🦋" },
+    { "title": "LinkedIn",     "url": "https://www.linkedin.com/in/yourhandle",            "emoji": "💼" },
+    { "title": "Newsletter",   "url": "https://yourdomain.com/newsletter",                 "emoji": "📬" },
+    { "title": "Book a call",  "url": "https://cal.com/yourhandle",                        "emoji": "📅" },
+    { "title": "Résumé (PDF)", "url": "https://yourdomain.com/resume.pdf",                 "emoji": "📄" }
+  ]
+}
