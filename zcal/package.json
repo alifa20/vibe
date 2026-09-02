@@ -1,0 +1,43 @@
+{
+  "name": "zcal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A private, single-user, self-hosted scheduling tool. Read one calendar, publish availability, reserve a slot, write the event back.",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "bootstrap": "npm install && npm run setup",
+    "setup": "node scripts/setup.mjs",
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "serve": "npm run build && npm run start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:all": "npm run typecheck && npm run test && npm run test:e2e",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:reset": "tsx scripts/reset.ts",
+    "verify": "npm run typecheck && npm run test && npm run build"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "next": "^15.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
