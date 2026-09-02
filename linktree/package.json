@@ -1,0 +1,15 @@
+{
+  "name": "linkinbio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Self-hosted link-in-bio page with first-party click tracking. Zero dependencies.",
+  "engines": { "node": ">=20.6.0" },
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "build": "node scripts/build.mjs",
+    "og": "node scripts/build.mjs --og-only",
+    "check": "node --check server.mjs"
+  }
+}

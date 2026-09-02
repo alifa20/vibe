@@ -1,0 +1,53 @@
+# /etc/caddy/Caddyfile
+#
+# Caddy gets a certificate automatically, so this is the whole TLS story.
+# Replace links.example.com with your domain and reload:  sudo systemctl reload caddy
+
+links.example.com {
+	encode zstd gzip
+
+	header {
+		# Caddy serves HTTPS, so commit to it.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options    "nosniff"
+		Referrer-Policy           "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# The app sets its own Cache-Control and Content-Security-Policy per route:
+	# no-cache on /, no-store on /go/* and /stats, one hour on static assets.
+	reverse_proxy 127.0.0.1:8787 {
+		header_up X-Real-IP {remote_host}
+	}
+
+	log {
+		output file /var/log/caddy/links.access.log
+		# The app writes its own click log. This one is for debugging.
+		format console
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Serving the static copy instead (dist/index.html), with only /go and /stats
+# proxied. Slightly faster, but you must run `npm run build` after every
+# links.json edit. Use this block *instead of* the one above.
+# ---------------------------------------------------------------------------
+# links.example.com {
+# 	encode zstd gzip
+# 	header {
+# 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+# 		X-Content-Type-Options    "nosniff"
+# 		Referrer-Policy           "strict-origin-when-cross-origin"
+# 	}
+# 	# Copy the value from dist/headers.txt — it is a hash of the inline <style>,
+# 	# so it changes every time you rebuild.
+# 	header / Content-Security-Policy "default-src 'none'; img-src 'self' data: https:; style-src 'sha256-REPLACE-ME'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+#
+# 	handle /go/* { reverse_proxy 127.0.0.1:8787 }
+# 	handle /stats { reverse_proxy 127.0.0.1:8787 }
+# 	handle {
+# 		root * /srv/linkinbio/dist
+# 		try_files {path} /index.html
+# 		file_server
+# 	}
+# }
