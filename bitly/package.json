@@ -1,0 +1,21 @@
+{
+  "name": "golinks",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Self-hosted link shortener with click analytics and QR codes on Cloudflare Workers",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "wrangler deploy --dry-run --outdir=dist",
+    "db:init": "wrangler d1 execute golinks --remote --file=./schema.sql",
+    "db:init:local": "wrangler d1 execute golinks --local --file=./schema.sql",
+    "tail": "wrangler tail"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}
