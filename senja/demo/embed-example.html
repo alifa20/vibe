@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Embed example</title>
+  <style>
+    /* The widget inherits whatever the host page uses. Change this and the
+       testimonials change with it. */
+    body { font-family: Georgia, "Times New Roman", serif; font-size: 17px;
+           max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+  </style>
+</head>
+<body>
+  <h1>Our customers</h1>
+
+  <!-- One div + one script tag. No iframe. -->
+  <div id="senja-wall" data-columns="3" data-limit="12" data-summary="true"></div>
+  <script src="http://localhost:3000/embed.js" async></script>
+</body>
+</html>

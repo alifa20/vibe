@@ -1,0 +1,37 @@
+# /etc/systemd/system/senja.service
+[Unit]
+Description=Senja testimonials
+Documentation=https://github.com/your-org/senja
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=senja
+Group=senja
+WorkingDirectory=/srv/senja
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5s
+
+# The app reads /srv/senja/.env itself (dotenv), so no EnvironmentFile is needed.
+Environment=NODE_ENV=production
+
+# --- hardening ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictSUIDSGID=true
+LockPersonality=true
+# The only path the service may write to: the SQLite file and the avatars.
+ReadWritePaths=/var/lib/senja
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target
