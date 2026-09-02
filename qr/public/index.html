@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR generator · QRForge</title>
+<meta name="description" content="Self-hosted QR code generator with live preview, custom styling and PNG/SVG export.">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">
+    <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22"><path fill="currentColor" d="M3 3h8v8H3V3Zm2 2v4h4V5H5Zm8-2h8v8h-8V3Zm2 2v4h4V5h-4ZM3 13h8v8H3v-8Zm2 2v4h4v-4H5Zm8-2h3v3h-3v-3Zm5 0h3v3h-3v-3Zm-5 5h3v3h-3v-3Zm5 0h3v3h-3v-3Z"/></svg>
+    <span>QR<b>Forge</b></span>
+  </a>
+  <nav class="topnav">
+    <a href="/" aria-current="page">Generator</a>
+    <a href="/admin">Dynamic codes</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="workspace">
+
+    <section class="panel preview-panel">
+      <div class="qr-stage" id="stage">
+        <div id="qr" aria-live="polite"></div>
+      </div>
+      <p class="warn" id="warn" hidden></p>
+      <div class="export">
+        <div class="field">
+          <label for="export-size">PNG size</label>
+          <select id="export-size">
+            <option value="512">512 × 512 px</option>
+            <option value="1024" selected>1024 × 1024 px</option>
+            <option value="2048">2048 × 2048 px — print</option>
+            <option value="4096">4096 × 4096 px — large format</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="dl-png" type="button">Download PNG</button>
+        <button class="btn btn-quiet" id="dl-svg" type="button">Download SVG</button>
+      </div>
+    </section>
+
+    <section class="panel controls">
+      <div class="group">
+        <h3>Content</h3>
+        <div class="field">
+          <label for="data">URL or text</label>
+          <textarea id="data" spellcheck="false" placeholder="https://example.com"></textarea>
+          <p class="counter"><span id="len">0</span> characters</p>
+          <p class="field-hint">
+            Pointing at a <a href="/admin">dynamic code</a> (<code class="mono">/r/&lt;slug&gt;</code>) lets you change the
+            destination later without reprinting.
+          </p>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Colours</h3>
+        <div class="grid-2">
+          <div class="field">
+            <label for="fg">Foreground</label>
+            <div class="swatch">
+              <input type="color" id="fg" value="#101828" aria-label="Foreground colour picker">
+              <input type="text" id="fg-hex" value="#101828" spellcheck="false" aria-label="Foreground hex value">
+            </div>
+          </div>
+          <div class="field">
+            <label for="bg">Background</label>
+            <div class="swatch">
+              <input type="color" id="bg" value="#ffffff" aria-label="Background colour picker">
+              <input type="text" id="bg-hex" value="#ffffff" spellcheck="false" aria-label="Background hex value">
+            </div>
+          </div>
+        </div>
+        <label class="check">
+          <input type="checkbox" id="transparent">
+          <span>Transparent background</span>
+        </label>
+      </div>
+
+      <div class="group">
+        <h3>Shape</h3>
+        <div class="grid-2">
+          <div class="field">
+            <label for="dots">Dot style</label>
+            <select id="dots">
+              <option value="square">Square</option>
+              <option value="rounded" selected>Rounded</option>
+              <option value="extra-rounded">Extra rounded</option>
+              <option value="dots">Dots</option>
+              <option value="classy">Classy</option>
+              <option value="classy-rounded">Classy rounded</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="corner-square">Corner frame</label>
+            <select id="corner-square">
+              <option value="">Match dots</option>
+              <option value="square">Square</option>
+              <option value="extra-rounded" selected>Extra rounded</option>
+              <option value="dot">Circle</option>
+              <option value="classy">Classy</option>
+              <option value="rounded">Rounded</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="corner-dot">Corner centre</label>
+            <select id="corner-dot">
+              <option value="">Match dots</option>
+              <option value="square">Square</option>
+              <option value="dot" selected>Circle</option>
+              <option value="rounded">Rounded</option>
+              <option value="classy">Classy</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ecc">Error correction</label>
+            <select id="ecc">
+              <option value="L">L — 7%</option>
+              <option value="M">M — 15%</option>
+              <option value="Q" selected>Q — 25%</option>
+              <option value="H">H — 30%, best with a logo</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="margin">Quiet zone <span class="muted">margin around the code</span></label>
+          <div class="range-row">
+            <input type="range" id="margin" min="0" max="40" step="2" value="8">
+            <output id="margin-out">8</output>
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Centre logo</h3>
+        <div class="field">
+          <div class="file-row">
+            <input type="file" id="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+            <button class="btn btn-quiet" id="logo-clear" type="button" hidden>Remove</button>
+          </div>
+          <p class="field-hint" id="logo-hint">PNG, JPEG, WebP or SVG, up to 2&nbsp;MB. Stays in your browser — nothing is uploaded.</p>
+        </div>
+        <div class="field" id="logo-size-field" hidden>
+          <label for="logo-size">Logo size <span class="muted">share of the code</span></label>
+          <div class="range-row">
+            <input type="range" id="logo-size" min="10" max="45" step="1" value="30">
+            <output id="logo-size-out">30%</output>
+          </div>
+        </div>
+        <label class="check" id="logo-hide-field" hidden>
+          <input type="checkbox" id="logo-hide" checked>
+          <span>Clear the dots behind the logo</span>
+        </label>
+      </div>
+
+      <div class="group">
+        <div class="actions">
+          <button class="btn btn-quiet" id="reset" type="button">Reset styling</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script src="/vendor/qr-code-styling.js"></script>
+<script src="/app.js" defer></script>
+</body>
+</html>
