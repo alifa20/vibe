@@ -1,0 +1,14 @@
+{
+  "name": "personal-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "One-page personal site. content.json is the CMS.",
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "node build.mjs && node server.mjs",
+    "dev": "node build.mjs && node server.mjs --dev",
+    "serve": "node server.mjs"
+  },
+  "engines": { "node": ">=18" }
+}

@@ -1,0 +1,60 @@
+{
+  "site": {
+    "url": "https://example.com",
+    "title": null,
+    "description": null,
+    "lang": "en",
+    "twitter": ""
+  },
+
+  "theme": {
+    "accent": "#9c4221",
+    "accentDark": "#e8875c"
+  },
+
+  "name": "Ali Fathieh",
+  "status": "Available for new work",
+  "headline": "Software engineer building calm, careful tools for people who do serious work.",
+  "about": "I design and build web products end to end — from the data model up to the last hairline border. Most of my time goes into interfaces that people live in all day, where small frictions compound and taste is a feature. Previously in fintech and practice management; currently interested in local-first software, editorial layout on the web, and making things that stay fast for years.",
+  "avatar": "assets/avatar.svg",
+  "email": "hello@example.com",
+
+  "social": [
+    { "label": "Email",    "url": "mailto:hello@example.com" },
+    { "label": "GitHub",   "url": "https://github.com/yourhandle" },
+    { "label": "LinkedIn", "url": "https://www.linkedin.com/in/yourhandle" },
+    { "label": "X",        "url": "https://x.com/yourhandle" }
+  ],
+
+  "work": {
+    "label": "Selected work",
+    "projects": [
+      {
+        "title": "Ledgerline",
+        "description": "A double-entry bookkeeping engine with a keyboard-first review queue. Reconciles 40k transactions a month for a small accounting practice.",
+        "url": "https://example.com/ledgerline"
+      },
+      {
+        "title": "Quiet RSS",
+        "description": "A reader that fetches once an hour and never notifies you. Local-first, offline, syncs over a single file.",
+        "url": "https://example.com/quiet-rss"
+      },
+      {
+        "title": "Typeset",
+        "description": "A tiny layout engine for print-quality PDFs from Markdown — footnotes, widows and orphans, real small caps.",
+        "url": "https://example.com/typeset"
+      }
+    ]
+  },
+
+  "contact": {
+    "label": "Contact",
+    "heading": "Say hello",
+    "intro": "Have something you'd like built, or just want to compare notes? Write to me here and I'll reply within a couple of days.",
+    "button": "Send message",
+    "successTitle": "Message sent.",
+    "successBody": "Thank you — it landed safely. I'll get back to you at the address you gave."
+  },
+
+  "footer": "Built by hand. No trackers, no cookies, no third parties."
+}
