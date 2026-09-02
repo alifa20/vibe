@@ -1,0 +1,23 @@
+{
+  "name": "tally",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hosted personal form builder",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "nodemailer": "^9.1.0"
+  }
+}
