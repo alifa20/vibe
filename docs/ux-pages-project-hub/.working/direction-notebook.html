@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vibe direction: notebook</title>
+<style>
+/* =====================================================================
+   DIRECTION: notebook
+   ---------------------------------------------------------------------
+   fonts   display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif
+           body:    Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif
+           notes:   same display face, italic, in margin ink
+           code:    ui-monospace, "SF Mono", Menlo, Consolas, monospace
+   radii   2px paper edges · stamps use an uneven ellipse
+           (48% 52% 46% 54% / 56% 44% 56% 44%) · 0 on rules
+   light   paper #f4ede0  paper-2 #fbf7ee  ink #2b2520  ink-2 #6d6155
+           rule #d8ccb6  dots #d9cfbd  margin #c65a46  accent #b5482f
+           server-ink #34557e  highlight #f2d06b
+   dark    paper #1d1915  paper-2 #26211c  ink #ede4d3  ink-2 #a7998a
+           rule #3b342c  dots #2f2a24  margin #c86a55  accent #e78c6f
+           server-ink #93b3dc  highlight #6a5526
+   nav     (both schemes) cloth #22303f  text #f4ede0  dim #a9b4c0
+           ribbon #b5482f (3px bottom edge)  menu paper #fbf7ee
+   states  hover = highlighter swipe behind the title + "open →" note
+           focus-visible = 2px ink outline, 5px offset
+   ===================================================================== */
+
+:root{
+  --display:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --body:Charter,"Bitstream Charter","Iowan Old Style",Georgia,serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+.t-light{--paper:#f4ede0;--paper-2:#fbf7ee;--ink:#2b2520;--ink-2:#6d6155;--rule:#d8ccb6;--dots:#d9cfbd;--margin:#c65a46;--accent:#b5482f;--srv:#34557e;--hl:#f2d06b;color-scheme:light}
+.t-dark{--paper:#1d1915;--paper-2:#26211c;--ink:#ede4d3;--ink-2:#a7998a;--rule:#3b342c;--dots:#2f2a24;--margin:#c86a55;--accent:#e78c6f;--srv:#93b3dc;--hl:#6a5526;color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:#e4dccb;color:#2b2520;font:16px/1.55 var(--body)}
+a{color:inherit}
+
+/* ---------- board ---------- */
+.board{padding:64px 56px 110px;min-width:1320px}
+.intro{display:grid;grid-template-columns:1.1fr 1fr;gap:56px;max-width:1200px;margin:0 0 64px}
+.eyebrow{font:italic 15px/1 var(--display);color:#b5482f;margin:0 0 10px}
+.intro h1{font:400 64px/0.95 var(--display);margin:0 0 20px;letter-spacing:-0.015em}
+.intro h1 i{color:#b5482f}
+.intro p{margin:0 0 12px;max-width:54ch}
+.tokens{background:#fbf7ee;border:1px solid #d8ccb6;padding:20px 22px;box-shadow:0 1px 0 #d8ccb6,0 14px 30px -18px rgba(43,37,32,.4);transform:rotate(.4deg)}
+.tokens h2{font:italic 17px/1.2 var(--display);margin:0 0 10px;color:#b5482f;font-weight:400}
+.tokens table{border-collapse:collapse;width:100%;font-size:13px}
+.tokens th{text-align:left;font:600 11px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:#6d6155;padding:4px 10px 6px 0}
+.tokens td{padding:3px 10px 3px 0;border-top:1px dotted #d8ccb6}
+.tokens code{font:12px var(--mono)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid rgba(43,37,32,.35);vertical-align:-1px;margin-right:6px}
+.shot{margin:0 0 80px}
+.shot-label{display:flex;gap:18px;align-items:baseline;margin:0 0 14px}
+.shot-label b{font:italic 20px/1 var(--display);font-weight:400}
+.shot-label span{font-size:14px;color:#6d6155}
+.note{max-width:1000px;margin:16px 0 0;font-size:14px;color:#6d6155}
+.note b{color:#2b2520;font-weight:600}
+.row-of{display:flex;gap:56px;align-items:flex-start}
+
+.browser{width:1200px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 0 rgba(0,0,0,.1),0 30px 60px -30px rgba(43,37,32,.55)}
+.bbar{height:40px;display:flex;align-items:center;gap:14px;padding:0 14px;background:#ece6da;border-bottom:1px solid #d6cdbc;font:12px/1 -apple-system,Helvetica,Arial,sans-serif;color:#4a443c}
+.dots{display:flex;gap:7px}.dots i{width:12px;height:12px;border-radius:50%;background:#d3cab8}
+.url{flex:1;max-width:560px;margin:0 auto;height:26px;background:#fbf8f2;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.phone{width:395px;border:10px solid #2a2622;border-radius:46px;background:#2a2622;overflow:hidden;box-shadow:0 30px 60px -30px rgba(43,37,32,.6)}
+.ph-top{color:#f4ede0;font:600 13px/1 -apple-system,Helvetica,Arial,sans-serif;padding:14px 26px 8px;display:flex;justify-content:space-between}
+.ph-url{padding:0 12px 10px}.ph-url div{background:#3a352f;color:#ddd5c6;border-radius:10px;height:30px;display:flex;align-items:center;justify-content:center;font:12px/1 -apple-system,Helvetica,Arial,sans-serif}
+.ph-screen{width:375px;border-radius:0 0 36px 36px;overflow:hidden}
+.ph-screen.fixed{height:620px}
+
+/* ---------- vibe page ---------- */
+.page{background-color:var(--paper);background-image:radial-gradient(var(--dots) 1px,transparent 1.3px);background-size:22px 22px;color:var(--ink);font:17px/1.55 var(--body);container-type:inline-size}
+.page a{text-decoration:none}
+.sheet{display:grid;grid-template-columns:230px minmax(0,1fr);position:relative}
+.paper{background:linear-gradient(90deg,transparent 229px,color-mix(in srgb,var(--margin) 60%,transparent) 229px 230px,transparent 230px)}
+.mg{padding:0 26px 0 40px}
+.main{padding:0 64px 0 40px}
+.mnote{font:italic 15px/1.4 var(--display);color:var(--accent)}
+.mhead{padding-top:54px}
+.vol{font:italic 15px/1.3 var(--display);color:var(--ink-2);margin:0}
+.vol b{display:block;font-style:normal;font-weight:400;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}
+.hd{padding:44px 64px 34px 40px}
+.hd h1{font:italic 400 112px/0.85 var(--display);margin:0 0 18px;letter-spacing:-0.035em}
+.hd .sub{font:400 26px/1.25 var(--display);margin:0 0 14px;max-width:26ch}
+.hd .sub span{color:var(--ink-2)}
+.hd p{margin:0;max-width:56ch;color:var(--ink-2)}
+.sec{border-top:3px double var(--ink);padding:18px 0 0;margin:0 0 6px;display:flex;align-items:baseline;gap:16px}
+.sec h2{font:400 13px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;margin:0}
+.sec span{font:italic 15px/1 var(--display);color:var(--ink-2)}
+.ent{display:grid;grid-template-columns:230px minmax(0,1fr) 170px;align-items:start;color:var(--ink);position:relative;outline:none}
+.ent .mg{padding-top:22px;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.ent .no{font:400 12px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.ent .body{padding:18px 24px 20px 40px;border-bottom:1px solid var(--rule)}
+.ent h3{font:400 32px/1.1 var(--display);margin:0 0 6px;display:inline;padding:0 4px;margin-left:-4px;background:linear-gradient(transparent 58%,transparent 58%) no-repeat;transition:background-size .2s}
+.ent .d{margin:8px 0 6px;max-width:58ch}
+.ent .st{font:400 12px/1.3 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.ent .stp{padding:28px 0 0;border-bottom:1px solid var(--rule);height:100%}
+.ent .open{display:block;font:italic 15px/1 var(--display);color:var(--accent);margin-top:10px;opacity:0}
+.ent:hover h3,.ent.is-hover h3{background-image:linear-gradient(100deg,transparent 2%,var(--hl) 4% 96%,transparent 98%);background-size:100% 62%;background-position:0 85%}
+.ent:hover .open,.ent.is-hover .open{opacity:1}
+.ent:focus-visible,.ent.is-focus{outline:2px solid var(--ink);outline-offset:-4px}
+.ent:focus-visible .open,.ent.is-focus .open{opacity:1}
+
+.stamp{display:inline-block;font:600 14px/1 var(--body);font-variant:small-caps;letter-spacing:.06em;padding:9px 14px 10px;border:1.5px solid currentColor;border-radius:48% 52% 46% 54% / 56% 44% 56% 44%;transform:rotate(-4deg);white-space:nowrap}
+.stamp.live{color:var(--accent);box-shadow:inset 0 0 0 1px currentColor}
+.stamp.srv{color:var(--srv);transform:rotate(3deg)}
+
+.foot{display:grid;grid-template-columns:230px 1fr;padding:34px 0 44px}
+.foot p{padding:0 64px 0 40px;margin:0;font:italic 17px/1.5 var(--display);color:var(--ink-2)}
+.foot a{color:var(--ink);border-bottom:1px solid var(--accent)}
+.sig{font:italic 26px/1 var(--display);color:var(--accent);display:block;margin-top:8px}
+
+@container (max-width:600px){
+  .sheet{grid-template-columns:1fr}
+  .paper{background:linear-gradient(90deg,transparent 16px,color-mix(in srgb,var(--margin) 60%,transparent) 16px 17px,transparent 17px)}
+  .mg{padding:0 16px 0 30px}
+  .main{padding:0 16px 0 30px}
+  .mhead{padding-top:22px}
+  .hd{padding:14px 16px 22px 30px}
+  .hd h1{font-size:76px}
+  .hd .sub{font-size:21px}
+  .hd p{font-size:16px}
+  .ent{grid-template-columns:1fr auto;grid-template-areas:"mg stp" "body body";padding:0 16px 0 30px}
+  .ent .mg{grid-area:mg;text-align:left;align-items:flex-start;padding:16px 0 0;flex-direction:row;gap:12px;align-items:baseline}
+  .ent .stp{grid-area:stp;padding:12px 0 0;border:0}
+  .ent .body{grid-area:body;padding:6px 0 16px}
+  .ent h3{font-size:27px}
+  .ent .d{font-size:16px}
+  .ent .open{display:none}
+  .stamp{font-size:12px;padding:7px 11px 8px}
+  .sec{margin:0 16px 0 30px}
+  .foot{grid-template-columns:1fr;padding:26px 16px 36px 30px}
+  .foot p{padding:0}
+}
+
+/* project page */
+.pg-main{padding:0 64px 60px 40px}
+.pg-head{padding:48px 0 26px}
+.pg-head .no{font:400 12px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);margin:0 0 12px}
+.pg-head h1{font:italic 400 96px/0.9 var(--display);margin:0 0 18px;letter-spacing:-0.03em}
+.standfirst{font:400 25px/1.3 var(--display);margin:0 0 10px;max-width:34ch}
+.pg-head p.s2{margin:0;color:var(--ink-2);max-width:60ch}
+.figs{display:grid;grid-template-columns:1.6fr 1fr;gap:34px;margin:16px 0 40px;align-items:start}
+.photo{background:var(--paper-2);padding:12px 12px 0;box-shadow:0 1px 2px rgba(0,0,0,.12),0 16px 30px -18px rgba(43,37,32,.5);position:relative;transform:rotate(-.6deg)}
+.photo.b{transform:rotate(1.2deg);margin-top:20px}
+.photo::before,.photo::after{content:"";position:absolute;width:86px;height:24px;background:rgba(214,196,150,.62);top:-10px}
+.photo::before{left:-18px;transform:rotate(-32deg)}
+.photo::after{right:-18px;transform:rotate(30deg)}
+.ph-in{border:1px solid var(--rule);background:repeating-linear-gradient(45deg,transparent 0 11px,var(--dots) 11px 12px);height:300px;display:flex;align-items:center;justify-content:center;font:12px var(--mono);color:var(--ink-2)}
+.photo.b .ph-in{height:180px}
+.photo figcaption{font:italic 15px/1 var(--display);color:var(--ink-2);padding:12px 2px 14px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:48px}
+.h2{font:400 13px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;border-top:3px double var(--ink);padding-top:16px;margin:0 0 14px}
+.fl{margin:0;padding:0;list-style:none;counter-reset:f}
+.fl li{counter-increment:f;display:grid;grid-template-columns:34px 1fr;padding:8px 0;border-bottom:1px solid var(--rule)}
+.fl li::before{content:counter(f) ".";font:italic 22px/1 var(--display);color:var(--accent)}
+.card{background:var(--paper-2);border:1px solid var(--rule);box-shadow:0 14px 26px -20px rgba(43,37,32,.6)}
+.card-h{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--margin);padding-left:14px;font:italic 15px/1 var(--display);color:var(--ink-2)}
+.copy{font:600 13px/1 var(--body);font-variant:small-caps;letter-spacing:.06em;color:var(--accent);background:transparent;border:0;min-height:44px;min-width:64px;padding:0 14px;cursor:pointer}
+.copy:hover{text-decoration:underline;text-underline-offset:4px}
+.copy:focus-visible{outline:2px solid var(--ink);outline-offset:-6px}
+.card pre{background-image:repeating-linear-gradient(transparent 0 27px,color-mix(in srgb,var(--srv) 25%,transparent) 27px 28px);background-position:0 8px;margin:0;padding:12px 16px 14px;font:14px/28px var(--mono);white-space:pre-wrap}
+.card .c{color:var(--ink-2)}
+.hint{font-size:15px;color:var(--ink-2);margin:12px 0 0}
+.srcl{display:inline-flex;align-items:center;gap:10px;min-height:44px;margin-top:18px;font:italic 20px/1 var(--display);border-bottom:1px solid var(--accent)}
+.srcl:hover{color:var(--accent)}
+.mg .mnote{margin:0 0 22px}
+.mg dl{margin:0}
+.mg dt{font:400 11px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);margin-top:16px}
+.mg dd{margin:4px 0 0;font:italic 17px/1.3 var(--display)}
+
+/* ---------- nav strip ---------- */
+.vnav-wrap{container-type:inline-size}
+.vnav{--c:#22303f;--t:#f4ede0;--d:#a9b4c0;--rib:#b5482f;--mp:#fbf7ee;--mi:#2b2520;
+  position:relative;display:flex;align-items:stretch;height:47px;background:var(--c);color:var(--t);border-bottom:3px solid var(--rib);font:16px/1 var(--display);white-space:nowrap}
+.vnav a,.vnav summary{color:var(--t);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:0 14px;cursor:pointer}
+.vnav a:hover,.vnav summary:hover{background:rgba(244,237,224,.1)}
+.vnav a:focus-visible,.vnav summary:focus-visible{outline:2px solid var(--t);outline-offset:-6px}
+.vnav .back{font-style:italic;font-size:18px;gap:8px;padding-left:16px}
+.vnav .back .ar{font-style:normal;color:#e3a08c}
+.vnav .crumb{display:flex;align-items:center;color:var(--d);font-style:italic;padding:0 8px}
+.vnav .vsw{margin-left:auto;display:flex;align-items:stretch}
+.vnav .step{color:var(--d);font-size:20px}
+.vnav .step .lbl{font:italic 15px/1 var(--display);margin:0 8px}
+.vnav details{display:flex}
+.vnav summary{list-style:none;gap:9px;border-left:1px solid rgba(244,237,224,.18);border-right:1px solid rgba(244,237,224,.18)}
+.vnav summary::-webkit-details-marker{display:none}
+.vnav summary .no{font:400 11px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--d)}
+.vnav summary .nm{font-style:italic;font-size:17px}
+.vnav summary .tri{font-size:11px;color:#e3a08c}
+.vnav details[open] summary{background:var(--mp);color:var(--mi)}
+.vnav details[open] summary .no{color:#6d6155}
+.vnav .menu{position:absolute;top:47px;right:0;width:360px;z-index:5;margin:0;padding:8px 0 10px;list-style:none;background:var(--mp);color:var(--mi);box-shadow:0 18px 30px -12px rgba(0,0,0,.55);border:1px solid #d8ccb6;border-top:0}
+.vnav .menu .grp{font:400 11px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:#6d6155;padding:12px 18px 6px}
+.vnav .menu a{color:var(--mi);display:grid;grid-template-columns:30px 1fr auto;justify-content:stretch;gap:6px;text-align:left;padding:0 18px;font-size:18px}
+.vnav .menu a:hover{background:#efe6d4}
+.vnav .menu .ix{font:italic 14px/1 var(--display);color:#6d6155}
+.vnav .menu .here{font:italic 14px/1 var(--display);color:#b5482f}
+.vnav .menu a[aria-current]{background:linear-gradient(100deg,transparent 2%,#f2d06b 4% 96%,transparent 98%) no-repeat 0 60%/100% 60%}
+@container (max-width:600px){
+  .vnav .crumb,.vnav .step .lbl,.vnav summary .no{display:none}
+  .vnav .menu{left:0;width:auto}
+}
+
+/* teleprompter stand-in */
+.tp{background:#0a0c0f;color:#e9eef4;font:15px/1.4 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:20px 16px;min-height:600px}
+.tp h3{margin:0 0 4px;font-size:22px}
+.tp .m{color:#94a3b4;font-size:13px;margin:0 0 18px}
+.tp .lh{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px}
+.tp .lbl{text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:#94a3b4}
+.tp .btn{border:1px solid #2a323d;background:#1b2028;color:#e9eef4;border-radius:8px;padding:7px 12px;font-size:13px}
+.tp ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.tp li{background:#14181e;border:1px solid #2a323d;border-radius:8px;padding:10px 12px}
+.tp li.on{border-color:#6cc2ff;box-shadow:inset 3px 0 0 #6cc2ff}
+.tp li b{display:block;font-weight:600;font-size:15px}
+.tp li span{font-size:12px;color:#94a3b4}
+</style>
+</head>
+<body>
+<div class="board">
+
+  <header class="intro">
+    <div>
+      <p class="eyebrow">direction no. 2</p>
+      <h1>notebook, <i>a lab book for things made with ai</i></h1>
+      <p>each project is an entry in a working notebook: a number, a title in a bookish serif, a line about what it does, and a stamp saying whether it runs here or needs a server. the wide margin is where the asides live, like "inspired by Bitly", so the main column stays calm.</p>
+      <p>warm paper, a red margin rule, highlighter on hover. it reads slower than the other options, on purpose: it feels like flicking back through your own notes.</p>
+    </div>
+    <div class="tokens">
+      <h2>tokens</h2>
+      <table>
+        <tr><th></th><th>light</th><th>dark</th></tr>
+        <tr><td>paper</td><td><i class="sw" style="background:#f4ede0"></i>#f4ede0</td><td><i class="sw" style="background:#1d1915"></i>#1d1915</td></tr>
+        <tr><td>paper-2 (cards, photos)</td><td><i class="sw" style="background:#fbf7ee"></i>#fbf7ee</td><td><i class="sw" style="background:#26211c"></i>#26211c</td></tr>
+        <tr><td>ink</td><td><i class="sw" style="background:#2b2520"></i>#2b2520</td><td><i class="sw" style="background:#ede4d3"></i>#ede4d3</td></tr>
+        <tr><td>ink-2</td><td><i class="sw" style="background:#6d6155"></i>#6d6155</td><td><i class="sw" style="background:#a7998a"></i>#a7998a</td></tr>
+        <tr><td>rule / dots</td><td><i class="sw" style="background:#d8ccb6"></i>#d8ccb6 / #d9cfbd</td><td><i class="sw" style="background:#3b342c"></i>#3b342c / #2f2a24</td></tr>
+        <tr><td>margin rule</td><td><i class="sw" style="background:#c65a46"></i>#c65a46</td><td><i class="sw" style="background:#c86a55"></i>#c86a55</td></tr>
+        <tr><td>accent (live stamp)</td><td><i class="sw" style="background:#b5482f"></i>#b5482f</td><td><i class="sw" style="background:#e78c6f"></i>#e78c6f</td></tr>
+        <tr><td>server stamp</td><td><i class="sw" style="background:#34557e"></i>#34557e</td><td><i class="sw" style="background:#93b3dc"></i>#93b3dc</td></tr>
+        <tr><td>highlighter</td><td><i class="sw" style="background:#f2d06b"></i>#f2d06b</td><td><i class="sw" style="background:#6a5526"></i>#6a5526</td></tr>
+        <tr><td>nav strip</td><td colspan="2"><i class="sw" style="background:#22303f"></i>#22303f cloth · #f4ede0 text · <i class="sw" style="background:#b5482f"></i>#b5482f ribbon (both schemes)</td></tr>
+        <tr><td>type</td><td colspan="2">"Iowan Old Style", Palatino, Georgia (display) · Charter, Georgia (body) · <code>ui-monospace, Menlo</code> (commands)</td></tr>
+        <tr><td>radii</td><td colspan="2">2px paper · uneven ellipse on stamps · 0 on rules</td></tr>
+      </table>
+    </div>
+  </header>
+
+  <!-- hub desktop light -->
+  <section class="shot">
+    <div class="shot-label"><b>hub, desktop 1200, light</b><span>golinks shows hover (highlighter + "open"), linkinbio shows keyboard focus</span></div>
+    <div class="browser">
+      <div class="bbar"><div class="dots"><i></i><i></i><i></i></div><div class="url">alifa20.github.io/vibe/</div><div style="width:50px"></div></div>
+      <div class="page t-light"><div class="paper">
+        <div class="sheet">
+          <div class="mg mhead"><p class="vol"><b>vol. 1</b>eight entries,<br>still adding</p></div>
+          <div class="main hd">
+            <h1>vibe</h1>
+            <p class="sub">eight things I built with AI. <span>Notes, demos, and how to run them.</span></p>
+            <p>Mostly this is my own index for hopping between experiments. If someone sent you here: hi. The first two run right in your browser.</p>
+          </div>
+        </div>
+
+        <div class="sheet"><div class="mg"><p class="mnote" style="padding-top:18px">start here: nothing to install</p></div><div class="main" style="padding-right:64px"><div class="sec"><h2>live demos</h2><span>two entries</span></div></div></div>
+        <a class="ent" href="/vibe/teleprompter/"><div class="mg"><span class="no">no. 01</span></div><div class="body"><h3>teleprompter</h3><p class="d">A local, single-page teleprompter. Scripts stay in your browser.</p><span class="st">Vite + React + TS</span></div><div class="stp"><span class="stamp live">live demo</span><span class="open">open it →</span></div></a>
+        <a class="ent" href="/vibe/carrd/"><div class="mg"><span class="no">no. 02</span><span class="mnote">inspired by Carrd</span></div><div class="body"><h3>personal-site</h3><p class="d">One-page personal site. content.json is the CMS.</p><span class="st">Node build → static HTML</span></div><div class="stp"><span class="stamp live">live demo</span><span class="open">open it →</span></div></a>
+
+        <div class="sheet"><div class="mg"><p class="mnote" style="padding-top:44px">each page has screenshots and the three commands to run it</p></div><div class="main" style="padding-right:64px;padding-top:30px"><div class="sec"><h2>run it yourself</h2><span>six entries, each needs a server</span></div></div></div>
+        <a class="ent is-hover" href="/vibe/bitly/"><div class="mg"><span class="no">no. 03</span><span class="mnote">inspired by Bitly</span></div><div class="body"><h3>golinks</h3><p class="d">Link shortener with click analytics and QR codes on your own domain.</p><span class="st">Cloudflare Workers + KV + D1</span></div><div class="stp"><span class="stamp srv">needs a server</span><span class="open">how to run it →</span></div></a>
+        <a class="ent is-focus" href="/vibe/linktree/"><div class="mg"><span class="no">no. 04</span><span class="mnote">inspired by Linktree</span></div><div class="body"><h3>linkinbio</h3><p class="d">Link-in-bio page with first-party click tracking. Zero dependencies.</p><span class="st">Node</span></div><div class="stp"><span class="stamp srv">needs a server</span><span class="open">how to run it →</span></div></a>
+        <a class="ent" href="/vibe/qr/"><div class="mg"><span class="no">no. 05</span></div><div class="body"><h3>qrforge</h3><p class="d">QR generator with editable dynamic codes and scan tracking.</p><span class="st">Node + SQLite</span></div><div class="stp"><span class="stamp srv">needs a server</span><span class="open">how to run it →</span></div></a>
+        <a class="ent" href="/vibe/senja/"><div class="mg"><span class="no">no. 06</span><span class="mnote">inspired by Senja</span></div><div class="body"><h3>senja</h3><p class="d">Collect, approve and embed testimonials.</p><span class="st">Node + SQLite</span></div><div class="stp"><span class="stamp srv">needs a server</span><span class="open">how to run it →</span></div></a>
+        <a class="ent" href="/vibe/tally/"><div class="mg"><span class="no">no. 07</span><span class="mnote">inspired by Tally</span></div><div class="body"><h3>forms</h3><p class="d">A small form builder. Responses stay in a SQLite file you control.</p><span class="st">Node + SQLite</span></div><div class="stp"><span class="stamp srv">needs a server</span><span class="open">how to run it →</span></div></a>
+        <a class="ent" href="/vibe/zcal/"><div class="mg"><span class="no">no. 08</span><span class="mnote">inspired by Zcal</span></div><div class="body"><h3>zcal</h3><p class="d">Single-user scheduling: read one calendar, publish availability, book a slot.</p><span class="st">Next.js</span></div><div class="stp"><span class="stamp srv">needs a server</span><span class="open">how to run it →</span></div></a>
+
+        <div class="foot"><div></div><p>Built by Ali, one conversation with an AI at a time. Source for all eight lives in <a href="https://github.com/alifa20/vibe">github.com/alifa20/vibe</a>.<span class="sig">— a.</span></p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- hub phone dark -->
+  <section class="shot">
+    <div class="shot-label"><b>hub, phone 375, dark</b><span>full-page capture. the margin collapses to a thin red rule; asides sit beside the entry number</span></div>
+    <div class="phone">
+      <div class="ph-top"><span>9:41</span><span>▂▄▆ ▮</span></div>
+      <div class="ph-url"><div>alifa20.github.io/vibe/</div></div>
+      <div class="ph-screen">
+        <div class="page t-dark"><div class="paper">
+          <div class="sheet">
+            <div class="mg mhead"><p class="vol"><b>vol. 1</b></p></div>
+            <div class="main hd">
+              <h1>vibe</h1>
+              <p class="sub">eight things I built with AI. <span>Notes, demos, and how to run them.</span></p>
+              <p>Mostly my own index for hopping between experiments. The first two run right in your browser.</p>
+            </div>
+          </div>
+          <div class="sec"><h2>live demos</h2><span>two</span></div>
+          <a class="ent" href="/vibe/teleprompter/"><div class="mg"><span class="no">no. 01</span></div><div class="stp"><span class="stamp live">live demo</span></div><div class="body"><h3>teleprompter</h3><p class="d">A local, single-page teleprompter. Scripts stay in your browser.</p><span class="st">Vite + React + TS</span></div></a>
+          <a class="ent" href="/vibe/carrd/"><div class="mg"><span class="no">no. 02</span><span class="mnote">inspired by Carrd</span></div><div class="stp"><span class="stamp live">live demo</span></div><div class="body"><h3>personal-site</h3><p class="d">One-page personal site. content.json is the CMS.</p><span class="st">Node build → static HTML</span></div></a>
+          <div class="sec" style="margin-top:22px"><h2>run it yourself</h2><span>six</span></div>
+          <a class="ent" href="/vibe/bitly/"><div class="mg"><span class="no">no. 03</span><span class="mnote">inspired by Bitly</span></div><div class="stp"><span class="stamp srv">needs a server</span></div><div class="body"><h3>golinks</h3><p class="d">Link shortener with click analytics and QR codes on your own domain.</p><span class="st">Cloudflare Workers + KV + D1</span></div></a>
+          <a class="ent" href="/vibe/linktree/"><div class="mg"><span class="no">no. 04</span><span class="mnote">inspired by Linktree</span></div><div class="stp"><span class="stamp srv">needs a server</span></div><div class="body"><h3>linkinbio</h3><p class="d">Link-in-bio page with first-party click tracking. Zero dependencies.</p><span class="st">Node</span></div></a>
+          <a class="ent" href="/vibe/qr/"><div class="mg"><span class="no">no. 05</span></div><div class="stp"><span class="stamp srv">needs a server</span></div><div class="body"><h3>qrforge</h3><p class="d">QR generator with editable dynamic codes and scan tracking.</p><span class="st">Node + SQLite</span></div></a>
+          <a class="ent" href="/vibe/senja/"><div class="mg"><span class="no">no. 06</span><span class="mnote">inspired by Senja</span></div><div class="stp"><span class="stamp srv">needs a server</span></div><div class="body"><h3>senja</h3><p class="d">Collect, approve and embed testimonials.</p><span class="st">Node + SQLite</span></div></a>
+          <a class="ent" href="/vibe/tally/"><div class="mg"><span class="no">no. 07</span><span class="mnote">inspired by Tally</span></div><div class="stp"><span class="stamp srv">needs a server</span></div><div class="body"><h3>forms</h3><p class="d">A small form builder. Responses stay in a SQLite file you control.</p><span class="st">Node + SQLite</span></div></a>
+          <a class="ent" href="/vibe/zcal/"><div class="mg"><span class="no">no. 08</span><span class="mnote">inspired by Zcal</span></div><div class="stp"><span class="stamp srv">needs a server</span></div><div class="body"><h3>zcal</h3><p class="d">Single-user scheduling: read one calendar, publish availability, book a slot.</p><span class="st">Next.js</span></div></a>
+          <div class="foot"><p>Built by Ali, one conversation with an AI at a time. <a href="https://github.com/alifa20/vibe">Source on GitHub</a>.<span class="sig">— a.</span></p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- project page desktop light -->
+  <section class="shot">
+    <div class="shot-label"><b>project page: zcal, desktop 1200, light</b><span>nav strip on top with switcher closed; facts live in the margin</span></div>
+    <div class="browser">
+      <div class="bbar"><div class="dots"><i></i><i></i><i></i></div><div class="url">alifa20.github.io/vibe/zcal/</div><div style="width:50px"></div></div>
+      <div class="vnav-wrap">
+        <nav class="vnav" aria-label="vibe projects">
+          <a class="back" href="/vibe/"><span class="ar">←</span>vibe</a>
+          <span class="crumb">eight things I built with AI</span>
+          <div class="vsw">
+            <a class="step" href="/vibe/tally/" aria-label="previous: forms">‹<span class="lbl">forms</span></a>
+            <details><summary aria-label="switch project, current: zcal"><span class="no">no. 08</span><span class="nm">zcal</span><span class="tri">▼</span></summary></details>
+            <a class="step" href="/vibe/teleprompter/" aria-label="next: teleprompter"><span class="lbl">teleprompter</span>›</a>
+          </div>
+        </nav>
+      </div>
+      <div class="page t-light"><div class="paper">
+        <div class="sheet">
+          <aside class="mg" style="padding-top:58px">
+            <p class="mnote">inspired by Zcal, minus the accounts</p>
+            <dl>
+              <dt>kind</dt><dd><span class="stamp srv" style="margin-top:6px">needs a server</span></dd>
+              <dt>stack</dt><dd>Next.js + SQLite</dd>
+              <dt>needs</dt><dd>Node 20.9 or newer</dd>
+              <dt>source</dt><dd><a href="https://github.com/alifa20/vibe/tree/main/zcal" style="border-bottom:1px solid var(--accent)">vibe/zcal ↗</a></dd>
+            </dl>
+          </aside>
+          <main class="pg-main">
+            <div class="pg-head">
+              <p class="no">entry no. 08</p>
+              <h1>zcal</h1>
+              <p class="standfirst">Single-user scheduling: read one calendar, publish availability, book a slot.</p>
+              <p class="s2">One person, one calendar, one SQLite file on your own disk. No accounts, no analytics.</p>
+            </div>
+            <div class="figs">
+              <figure class="photo" style="margin:0"><div class="ph-in">screenshot: booking page</div><figcaption>fig. 1, the page you send people</figcaption></figure>
+              <figure class="photo b" style="margin:20px 0 0"><div class="ph-in">screenshot: slot booked</div><figcaption>fig. 2, booked and written back</figcaption></figure>
+            </div>
+            <div class="cols">
+              <section>
+                <h2 class="h2">what it does</h2>
+                <ol class="fl">
+                  <li>Reads one calendar: an .ics feed, an upload, or busy blocks you add by hand.</li>
+                  <li>Publishes your free time as bookable slots.</li>
+                  <li>A visitor reserves a slot. No account needed.</li>
+                  <li>Writes the event back to that calendar.</li>
+                </ol>
+              </section>
+              <section>
+                <h2 class="h2">run it locally</h2>
+                <div class="card">
+                  <div class="card-h"><span>in your terminal</span><button class="copy" type="button">copy</button></div>
+<pre>cd zcal
+npm run bootstrap  <span class="c"># deps, .env, sample data</span>
+npm run dev        <span class="c"># localhost:3000</span></pre>
+                </div>
+                <p class="hint">It needs a server because bookings live in SQLite, which GitHub Pages can't run.</p>
+                <a class="srcl" href="https://github.com/alifa20/vibe/tree/main/zcal">read the source on GitHub ↗</a>
+              </section>
+            </div>
+          </main>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- nav strip at 375 over teleprompter -->
+  <section class="shot">
+    <div class="shot-label"><b>nav strip, phone 375, over teleprompter's library</b><span>left: closed. right: switcher open, current entry highlighted</span></div>
+    <div class="row-of">
+      <div class="phone">
+        <div class="ph-top"><span>9:41</span><span>▂▄▆ ▮</span></div>
+        <div class="ph-url"><div>alifa20.github.io/vibe/teleprompter/</div></div>
+        <div class="ph-screen fixed">
+          <div class="vnav-wrap">
+            <nav class="vnav" aria-label="vibe projects">
+              <a class="back" href="/vibe/"><span class="ar">←</span>vibe</a>
+              <div class="vsw">
+                <a class="step" href="/vibe/zcal/" aria-label="previous: zcal">‹</a>
+                <details><summary aria-label="switch project, current: teleprompter"><span class="no">no. 01</span><span class="nm">teleprompter</span><span class="tri">▼</span></summary></details>
+                <a class="step" href="/vibe/carrd/" aria-label="next: personal-site">›</a>
+              </div>
+            </nav>
+          </div>
+          <div class="tp">
+            <h3>Teleprompter</h3>
+            <p class="m">Scripts are saved in this browser only. Nothing is uploaded anywhere.</p>
+            <div class="lh"><span class="lbl">Scripts</span><span class="btn">+ New</span></div>
+            <ul>
+              <li class="on"><b>Q3 all-hands opener</b><span>11/18/2026, 9:12:40 AM</span></li>
+              <li><b>YouTube intro, take 4</b><span>11/14/2026, 8:03:11 PM</span></li>
+              <li><b>Wedding toast (final final)</b><span>11/02/2026, 10:47:55 PM</span></li>
+              <li><b>Podcast ad read, 60s</b><span>10/29/2026, 1:20:02 PM</span></li>
+              <li><b>Standup notes</b><span>10/21/2026, 9:00:18 AM</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="ph-top"><span>9:41</span><span>▂▄▆ ▮</span></div>
+        <div class="ph-url"><div>alifa20.github.io/vibe/teleprompter/</div></div>
+        <div class="ph-screen fixed">
+          <div class="vnav-wrap">
+            <nav class="vnav" aria-label="vibe projects">
+              <a class="back" href="/vibe/"><span class="ar">←</span>vibe</a>
+              <div class="vsw">
+                <a class="step" href="/vibe/zcal/" aria-label="previous: zcal">‹</a>
+                <details open><summary aria-label="switch project, current: teleprompter"><span class="no">no. 01</span><span class="nm">teleprompter</span><span class="tri">▲</span></summary>
+                  <ul class="menu">
+                    <li class="grp">live demos</li>
+                    <li><a href="/vibe/teleprompter/" aria-current="page"><span class="ix">01</span><span>teleprompter</span><span class="here">you're here</span></a></li>
+                    <li><a href="/vibe/carrd/"><span class="ix">02</span><span>personal-site</span><span></span></a></li>
+                    <li class="grp">run it yourself</li>
+                    <li><a href="/vibe/bitly/"><span class="ix">03</span><span>golinks</span><span></span></a></li>
+                    <li><a href="/vibe/linktree/"><span class="ix">04</span><span>linkinbio</span><span></span></a></li>
+                    <li><a href="/vibe/qr/"><span class="ix">05</span><span>qrforge</span><span></span></a></li>
+                    <li><a href="/vibe/senja/"><span class="ix">06</span><span>senja</span><span></span></a></li>
+                    <li><a href="/vibe/tally/"><span class="ix">07</span><span>forms</span><span></span></a></li>
+                    <li><a href="/vibe/zcal/"><span class="ix">08</span><span>zcal</span><span></span></a></li>
+                  </ul>
+                </details>
+                <a class="step" href="/vibe/carrd/" aria-label="next: personal-site">›</a>
+              </div>
+            </nav>
+          </div>
+          <div class="tp">
+            <h3>Teleprompter</h3>
+            <p class="m">Scripts are saved in this browser only. Nothing is uploaded anywhere.</p>
+            <div class="lh"><span class="lbl">Scripts</span><span class="btn">+ New</span></div>
+            <ul>
+              <li class="on"><b>Q3 all-hands opener</b><span>11/18/2026, 9:12:40 AM</span></li>
+              <li><b>YouTube intro, take 4</b><span>11/14/2026, 8:03:11 PM</span></li>
+              <li><b>Wedding toast (final final)</b><span>11/02/2026, 10:47:55 PM</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>strip anatomy at 375:</b> ← vibe (≈84px) · ‹ (44) · teleprompter ▼ (≈150) · › (44). one line, all targets ≥ 44px. the "no. 01" label and the prev/next names drop below 600px. the cloth-blue strip and rust ribbon belong to vibe, not to the app, so it reads as a bookmark sitting on top of someone else's page. the switcher is a native &lt;details&gt;, no js.</p>
+  </section>
+
+</div>
+</body>
+</html>

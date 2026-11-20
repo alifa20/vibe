@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vibe direction: sticker-sheet</title>
+<style>
+/* =====================================================================
+   DIRECTION: sticker-sheet
+   ---------------------------------------------------------------------
+   fonts   display + body: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+           Arial, sans-serif · display 900, body 500, labels 800
+           tags + code: ui-monospace, "SF Mono", Menlo, Consolas, monospace
+   radii   cards 0 · pills 999px · number badges 50% · buttons 0
+   lines   3px solid borders, hard offset shadow 6px 6px 0 (hover 9px, press 2px)
+   light   bg #fff3d6  surface #ffffff  ink #121212  ink-2 #4b4740
+           border #121212  shadow #121212  dots #f1dfb4
+   dark    bg #17151d  surface #24212c  ink #f6f0e2  ink-2 #b9b2a3
+           border #f6f0e2  shadow #f6f0e2  dots #23202a
+   project colours (same in both schemes, text on them is always #121212)
+           teleprompter #ff5247 · personal-site #ffd23f · golinks #4d86ff
+           linkinbio #ff8fcf · qrforge #a07bff · senja #c8f03c
+           forms #ff9f2e · zcal #5cd2ff
+   nav     (both schemes) bg #ffd23f  ink #121212  bottom 3px #121212
+           pills #ffffff with 2px #121212 border · back pill #121212 on #ffd23f
+   states  hover = lift (-3,-3) + 9px shadow · active = press (+4,+4) + 2px shadow
+           focus-visible = 3px dashed outline in ink, 5px offset
+   ===================================================================== */
+:root{
+  --sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --c-teleprompter:#ff5247;--c-site:#ffd23f;--c-golinks:#4d86ff;--c-linkinbio:#ff8fcf;
+  --c-qrforge:#a07bff;--c-senja:#c8f03c;--c-forms:#ff9f2e;--c-zcal:#5cd2ff;
+}
+.t-light{--bg:#fff3d6;--surface:#ffffff;--ink:#121212;--ink-2:#4b4740;--bd:#121212;--sh:#121212;--dots:#f1dfb4;color-scheme:light}
+.t-dark{--bg:#17151d;--surface:#24212c;--ink:#f6f0e2;--ink-2:#b9b2a3;--bd:#f6f0e2;--sh:#f6f0e2;--dots:#23202a;color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:#f3e7c9;color:#121212;font:500 16px/1.45 var(--sans)}
+a{color:inherit}
+
+/* board */
+.board{padding:60px 56px 110px;min-width:1320px}
+.intro{display:grid;grid-template-columns:1fr 1fr;gap:56px;max-width:1200px;margin:0 0 64px}
+.tagline{display:inline-block;background:#121212;color:#ffd23f;font:800 13px/1 var(--sans);padding:8px 12px;margin:0 0 18px;transform:rotate(-2deg)}
+.intro h1{font:900 68px/0.92 var(--sans);letter-spacing:-0.04em;margin:0 0 22px}
+.intro h1 span{background:#ff8fcf;border:3px solid #121212;padding:0 10px;box-shadow:5px 5px 0 #121212;display:inline-block;transform:rotate(1.5deg);margin-top:8px}
+.intro p{margin:0 0 12px;max-width:52ch;font-size:17px}
+.tokens{background:#fff;border:3px solid #121212;box-shadow:8px 8px 0 #121212;padding:18px 20px}
+.tokens h2{font:900 20px/1 var(--sans);margin:0 0 12px}
+.tokens table{border-collapse:collapse;width:100%;font-size:13px}
+.tokens th{text-align:left;font:800 12px/1 var(--sans);padding:0 8px 8px 0}
+.tokens td{padding:4px 8px 4px 0;border-top:2px solid #f1e6cc}
+.tokens code{font:12px var(--mono)}
+.sw{display:inline-block;width:14px;height:14px;border:2px solid #121212;vertical-align:-2px;margin-right:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{border:2px solid #121212;padding:2px 7px;font:700 12px/1.4 var(--mono)}
+.shot{margin:0 0 84px}
+.shot-label{display:flex;gap:16px;align-items:center;margin:0 0 16px}
+.shot-label b{background:#121212;color:#fff3d6;font:800 14px/1 var(--sans);padding:7px 10px}
+.shot-label span{font-size:14px;color:#4b4740}
+.note{max-width:1000px;margin:18px 0 0;font-size:14px;color:#4b4740}
+.note b{color:#121212}
+.row-of{display:flex;gap:56px;align-items:flex-start}
+
+.browser{width:1200px;border:3px solid #121212;background:#fff;box-shadow:10px 10px 0 #121212}
+.bbar{height:42px;display:flex;align-items:center;gap:14px;padding:0 14px;background:#fff;border-bottom:3px solid #121212;font:600 12px/1 var(--sans)}
+.dots{display:flex;gap:7px}.dots i{width:13px;height:13px;border-radius:50%;border:2px solid #121212}
+.dots i:nth-child(1){background:#ff5247}.dots i:nth-child(2){background:#ffd23f}.dots i:nth-child(3){background:#c8f03c}
+.url{flex:1;max-width:560px;margin:0 auto;height:26px;border:2px solid #121212;display:flex;align-items:center;justify-content:center}
+.phone{width:401px;border:13px solid #121212;border-radius:48px;background:#121212;overflow:hidden;box-shadow:10px 10px 0 rgba(18,18,18,.25)}
+.ph-top{color:#fff;font:700 13px/1 var(--sans);padding:12px 24px 8px;display:flex;justify-content:space-between}
+.ph-url{padding:0 10px 10px}.ph-url div{background:#2a2a2a;color:#e8e2d4;border-radius:10px;height:30px;display:flex;align-items:center;justify-content:center;font:600 12px/1 var(--sans)}
+.ph-screen{width:375px;border-radius:0 0 35px 35px;overflow:hidden}
+.ph-screen.fixed{height:620px}
+
+/* page */
+.page{background-color:var(--bg);background-image:radial-gradient(var(--dots) 1.6px,transparent 1.8px);background-size:20px 20px;color:var(--ink);font:500 16px/1.45 var(--sans);container-type:inline-size}
+.page a{text-decoration:none}
+.wrap{padding:30px 48px 48px}
+.top{display:flex;justify-content:space-between;align-items:center;margin:0 0 34px}
+.logo{font:900 22px/1 var(--sans);letter-spacing:-0.03em}
+.gh{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:3px solid var(--bd);background:var(--surface);box-shadow:4px 4px 0 var(--sh);font:800 14px/1 var(--sans)}
+.gh:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--sh)}
+.hero{display:flex;align-items:flex-end;gap:30px;margin:0 0 46px}
+.big{font:900 168px/0.8 var(--sans);letter-spacing:-0.07em;margin:0;padding:18px 26px 26px;background:var(--c-site);color:#121212;border:4px solid var(--bd);box-shadow:10px 10px 0 var(--sh);transform:rotate(-3deg)}
+.hero-t h2{font:900 40px/1 var(--sans);letter-spacing:-0.03em;margin:0 0 12px;max-width:16ch}
+.hero-t p{margin:0;max-width:46ch;color:var(--ink-2);font-size:17px}
+.pill-ai{display:inline-block;margin:0 0 14px;font:800 12px/1 var(--mono);border:2px solid var(--bd);padding:6px 10px;border-radius:999px;background:var(--surface);transform:rotate(2deg)}
+
+.sec{display:flex;align-items:center;gap:12px;margin:0 0 18px}
+.sec h2{font:900 26px/1 var(--sans);letter-spacing:-0.02em;margin:0}
+.sec .ct{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:3px solid var(--bd);background:var(--surface);font:900 15px/1 var(--sans)}
+.sec p{margin:0 0 0 6px;color:var(--ink-2)}
+.grid{display:grid;gap:26px;margin:0 0 44px}
+.grid.two{grid-template-columns:1fr 1fr}
+.grid.three{grid-template-columns:repeat(3,1fr)}
+
+.card{position:relative;display:flex;flex-direction:column;background:var(--c);color:#121212;border:3px solid var(--bd);box-shadow:6px 6px 0 var(--sh);padding:18px 20px 18px;min-height:220px;transition:transform .12s,box-shadow .12s;outline:none}
+.grid.two .card{min-height:250px}
+.card:hover,.card.is-hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--sh)}
+.card:active,.card.is-press{transform:translate(4px,4px);box-shadow:2px 2px 0 var(--sh)}
+.card:focus-visible,.card.is-focus{outline:3px dashed var(--ink);outline-offset:5px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:3px solid #121212;background:#fff;font:900 15px/1 var(--sans);margin:0 0 14px}
+.card h3{font:900 32px/1 var(--sans);letter-spacing:-0.03em;margin:0 0 8px}
+.grid.two .card h3{font-size:42px}
+.card .d{margin:0 0 18px;font-size:16px;max-width:36ch}
+.card .ft{margin-top:auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tag{font:700 12px/1 var(--mono);background:#fff;border:2px solid #121212;padding:6px 8px}
+.badge{font:800 13px/1 var(--sans);border:2px solid #121212;border-radius:999px;padding:7px 11px;white-space:nowrap}
+.badge.live{background:#121212;color:var(--c)}
+.badge.srv{background:#fff;color:#121212;border-style:dashed}
+.insp{position:absolute;top:-14px;right:18px;background:#fff;color:#121212;border:2px solid #121212;font:800 12px/1 var(--sans);padding:7px 10px;transform:rotate(4deg);box-shadow:3px 3px 0 #121212}
+.insp:nth-of-type(odd){transform:rotate(-3deg)}
+.arrow{position:absolute;right:16px;bottom:14px;font:900 24px/1 var(--sans)}
+.foot{border-top:3px solid var(--bd);padding-top:20px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-weight:700}
+.foot a{border-bottom:3px solid var(--c-zcal)}
+
+@container (max-width:600px){
+  .wrap{padding:18px 16px 30px}
+  .top{margin-bottom:22px}
+  .gh{padding:0 12px;font-size:13px}
+  .hero{flex-direction:column;align-items:flex-start;gap:26px;margin-bottom:34px}
+  .big{font-size:104px;padding:12px 18px 18px;margin-left:6px;box-shadow:7px 7px 0 var(--sh)}
+  .hero-t h2{font-size:30px}
+  .hero-t p{font-size:16px}
+  .grid.two,.grid.three{grid-template-columns:1fr;gap:22px}
+  .card,.grid.two .card{min-height:0;padding:16px 16px 16px}
+  .card h3,.grid.two .card h3{font-size:28px}
+  .num{width:34px;height:34px;font-size:13px;margin-bottom:10px}
+  .sec h2{font-size:22px}
+  .sec p{display:none}
+  .arrow{display:none}
+}
+
+/* project page */
+.pband{background:var(--c-zcal);color:#121212;border-bottom:4px solid var(--bd);padding:40px 48px 44px;display:grid;grid-template-columns:1fr auto;gap:30px;align-items:end}
+.pband .num{width:52px;height:52px;font-size:18px;margin:0 0 12px}
+.pband h1{font:900 150px/0.8 var(--sans);letter-spacing:-0.07em;margin:0 0 20px}
+.pband p{font:700 22px/1.25 var(--sans);margin:0;max-width:30ch}
+.pband .side{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.pband .insp{position:static;transform:rotate(-4deg);font-size:14px}
+.pbody{padding:44px 48px 56px;display:grid;grid-template-columns:1.25fr 1fr;gap:44px}
+.shotf{background:var(--surface);border:3px solid var(--bd);box-shadow:8px 8px 0 var(--sh);position:relative}
+.shotf .in{height:330px;margin:12px;border:2px dashed var(--ink-2);display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(-45deg,transparent 0 14px,var(--dots) 14px 16px)}
+.shotf .lab{position:absolute;left:-12px;top:-16px;background:var(--c-zcal);color:#121212;border:2px solid #121212;font:800 13px/1 var(--mono);padding:8px 10px;transform:rotate(-3deg);box-shadow:3px 3px 0 #121212}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:26px}
+.mini .shotf .in{height:130px}
+.mini .lab{background:#fff}
+.h2{font:900 26px/1 var(--sans);letter-spacing:-0.02em;margin:0 0 16px}
+.feats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 34px;padding:0;list-style:none;counter-reset:f}
+.feats li{counter-increment:f;border:3px solid var(--bd);background:var(--surface);padding:12px 14px;font-weight:700;box-shadow:4px 4px 0 var(--sh)}
+.feats li::before{content:counter(f);display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--c-zcal);border:2px solid #121212;color:#121212;font:900 13px/1 var(--sans);margin:0 0 8px}
+.feats li span{display:block}
+.termbox{background:#121212;color:#f6f0e2;border:3px solid var(--bd);box-shadow:8px 8px 0 var(--c-zcal)}
+.termbox .h{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #3a3a3a;padding:8px 8px 8px 14px;font:700 12px/1 var(--mono);color:#b9b2a3}
+.copy{font:900 14px/1 var(--sans);background:#ffd23f;color:#121212;border:2px solid #f6f0e2;min-height:44px;min-width:80px;padding:0 14px;box-shadow:3px 3px 0 #f6f0e2;cursor:pointer}
+.copy:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 #f6f0e2}
+.copy:active{transform:translate(3px,3px);box-shadow:0 0 0 #f6f0e2}
+.copy:focus-visible{outline:3px dashed #ffd23f;outline-offset:4px}
+.termbox pre{margin:0;padding:14px;font:15px/1.75 var(--mono)}
+.termbox .p{color:var(--c-zcal)}
+.termbox .c{color:#8d877b}
+.why{margin:18px 0 26px;color:var(--ink-2)}
+.srcbtn{display:flex;align-items:center;justify-content:space-between;min-height:56px;padding:0 20px;border:3px solid var(--bd);background:var(--c-senja);color:#121212;box-shadow:6px 6px 0 var(--sh);font:900 18px/1 var(--sans)}
+.srcbtn:hover{transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--sh)}
+
+/* nav strip */
+.vnav-wrap{container-type:inline-size}
+.vnav{--y:#ffd23f;--k:#121212;position:relative;display:flex;align-items:center;gap:6px;height:56px;padding:0 8px;background:var(--y);color:var(--k);border-bottom:3px solid var(--k);font:800 15px/1 var(--sans);white-space:nowrap}
+.vnav a,.vnav summary{color:var(--k);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;cursor:pointer}
+.vnav a:focus-visible,.vnav summary:focus-visible{outline:3px dashed var(--k);outline-offset:2px}
+.vnav .back{background:var(--k);color:var(--y);padding:0 14px;gap:8px;border:2px solid var(--k);border-radius:999px}
+.vnav .back:hover{background:#fff;color:var(--k)}
+.vnav .crumb{font:700 13px/1 var(--mono);padding:0 8px}
+.vnav .vsw{margin-left:auto;display:flex;align-items:center;gap:6px}
+.vnav .step{background:#fff;border:2px solid var(--k);box-shadow:3px 3px 0 var(--k);font-size:18px;padding:0 10px}
+.vnav .step .lbl{font:800 14px/1 var(--sans);margin:0 6px}
+.vnav .step:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--k)}
+.vnav details{display:flex;min-width:0}
+.vnav summary{list-style:none;background:#fff;border:2px solid var(--k);border-radius:999px;padding:0 14px;gap:8px;box-shadow:3px 3px 0 var(--k)}
+.vnav summary::-webkit-details-marker{display:none}
+.vnav summary .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--k);background:var(--c)}
+.vnav summary .tri{font-size:11px}
+.vnav details[open] summary{transform:translate(3px,3px);box-shadow:0 0 0 var(--k)}
+.vnav .menu{position:absolute;top:62px;right:8px;width:330px;z-index:5;list-style:none;margin:0;padding:10px;background:#fff;border:3px solid var(--k);box-shadow:6px 6px 0 var(--k);display:grid;gap:6px}
+.vnav .menu .g{font:800 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;padding:6px 4px 2px;color:#4b4740}
+.vnav .menu a{display:flex;width:100%;justify-content:flex-start;gap:10px;padding:0 10px;border:2px solid transparent;font-size:16px}
+.vnav .menu a:hover{border-color:var(--k)}
+.vnav .menu .sq{width:18px;height:18px;border:2px solid var(--k);background:var(--c)}
+.vnav .menu .here{margin-left:auto;font:800 11px/1 var(--mono);background:var(--k);color:#fff;padding:5px 7px;border-radius:999px}
+.vnav .menu a[aria-current]{background:var(--c);border-color:var(--k);box-shadow:3px 3px 0 var(--k)}
+@container (max-width:600px){
+  .vnav .crumb,.vnav .step .lbl{display:none}
+  .vnav .menu{left:8px;right:8px;width:auto}
+}
+
+/* teleprompter stand-in */
+.tp{background:#0a0c0f;color:#e9eef4;font:15px/1.4 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:20px 16px;min-height:600px}
+.tp h3{margin:0 0 4px;font-size:22px}
+.tp .m{color:#94a3b4;font-size:13px;margin:0 0 18px}
+.tp .lh{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px}
+.tp .lbl{text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:#94a3b4}
+.tp .btn{border:1px solid #2a323d;background:#1b2028;color:#e9eef4;border-radius:8px;padding:7px 12px;font-size:13px}
+.tp ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.tp li{background:#14181e;border:1px solid #2a323d;border-radius:8px;padding:10px 12px}
+.tp li.on{border-color:#6cc2ff;box-shadow:inset 3px 0 0 #6cc2ff}
+.tp li b{display:block;font-weight:600;font-size:15px}
+.tp li span{font-size:12px;color:#94a3b4}
+</style>
+</head>
+<body>
+<div class="board">
+
+  <header class="intro">
+    <div>
+      <span class="tagline">direction 03 / sticker-sheet</span>
+      <h1>a sheet of stickers,<br><span>one per thing</span></h1>
+      <p>every project gets its own loud colour and becomes a chunky sticker: thick black outline, hard offset shadow, a little "inspired by" label slapped on the corner. it's the most playful of the four and the easiest to find things in, because you end up remembering "the blue one".</p>
+      <p>the maker log shows up as stuff stuck on stuff: a tilted "made with ai" pill, labels on screenshots, the colour following you onto each project page and into the nav strip's switcher.</p>
+    </div>
+    <div class="tokens">
+      <h2>tokens</h2>
+      <table>
+        <tr><th></th><th>light</th><th>dark</th></tr>
+        <tr><td>bg</td><td><i class="sw" style="background:#fff3d6"></i>#fff3d6</td><td><i class="sw" style="background:#17151d"></i>#17151d</td></tr>
+        <tr><td>surface</td><td><i class="sw" style="background:#ffffff"></i>#ffffff</td><td><i class="sw" style="background:#24212c"></i>#24212c</td></tr>
+        <tr><td>ink</td><td><i class="sw" style="background:#121212"></i>#121212</td><td><i class="sw" style="background:#f6f0e2"></i>#f6f0e2</td></tr>
+        <tr><td>ink-2</td><td><i class="sw" style="background:#4b4740"></i>#4b4740</td><td><i class="sw" style="background:#b9b2a3"></i>#b9b2a3</td></tr>
+        <tr><td>border + shadow</td><td><i class="sw" style="background:#121212"></i>#121212</td><td><i class="sw" style="background:#f6f0e2"></i>#f6f0e2</td></tr>
+        <tr><td>dot grid</td><td><i class="sw" style="background:#f1dfb4"></i>#f1dfb4</td><td><i class="sw" style="background:#23202a"></i>#23202a</td></tr>
+        <tr><td>project colours</td><td colspan="2"><div class="chips">
+          <span style="background:#ff5247">teleprompter #ff5247</span><span style="background:#ffd23f">personal-site #ffd23f</span><span style="background:#4d86ff">golinks #4d86ff</span><span style="background:#ff8fcf">linkinbio #ff8fcf</span><span style="background:#a07bff">qrforge #a07bff</span><span style="background:#c8f03c">senja #c8f03c</span><span style="background:#ff9f2e">forms #ff9f2e</span><span style="background:#5cd2ff">zcal #5cd2ff</span></div></td></tr>
+        <tr><td>nav strip</td><td colspan="2"><i class="sw" style="background:#ffd23f"></i>#ffd23f + #121212, white pills (both schemes)</td></tr>
+        <tr><td>type</td><td colspan="2">-apple-system, "Helvetica Neue", Arial · 900 / 800 / 500 · <code>ui-monospace, Menlo</code> for tags</td></tr>
+        <tr><td>shape</td><td colspan="2">cards 0 radius · pills 999px · 3px borders · 6px hard shadow</td></tr>
+      </table>
+    </div>
+  </header>
+
+  <!-- hub desktop light -->
+  <section class="shot">
+    <div class="shot-label"><b>hub · desktop 1200 · light</b><span>golinks = hover (lifted), linkinbio = pressed, senja = keyboard focus</span></div>
+    <div class="browser">
+      <div class="bbar"><div class="dots"><i></i><i></i><i></i></div><div class="url">alifa20.github.io/vibe/</div><div style="width:58px"></div></div>
+      <div class="page t-light">
+        <div class="wrap">
+          <div class="top"><span class="logo">ali's vibe log</span><a class="gh" href="https://github.com/alifa20/vibe">source on github ↗</a></div>
+          <div class="hero">
+            <h1 class="big">vibe</h1>
+            <div class="hero-t">
+              <span class="pill-ai">✦ made with ai, by ali</span>
+              <h2>eight things I built with AI.</h2>
+              <p>Mostly here so I can jump between my own experiments. The first two run right in your browser; the rest need a server, and their page says how.</p>
+            </div>
+          </div>
+
+          <div class="sec"><span class="ct">2</span><h2>live demos</h2><p>click and it runs. nothing to install.</p></div>
+          <div class="grid two">
+            <a class="card" style="--c:var(--c-teleprompter)" href="/vibe/teleprompter/"><span class="num">01</span><h3>teleprompter</h3><p class="d">A local, single-page teleprompter. Scripts stay in your browser.</p><div class="ft"><span class="badge live">▶ live demo</span><span class="tag">vite + react + ts</span></div><span class="arrow">→</span></a>
+            <a class="card" style="--c:var(--c-site)" href="/vibe/carrd/"><span class="insp">inspired by Carrd</span><span class="num">02</span><h3>personal-site</h3><p class="d">One-page personal site. content.json is the CMS.</p><div class="ft"><span class="badge live">▶ live demo</span><span class="tag">node build → static html</span></div><span class="arrow">→</span></a>
+          </div>
+
+          <div class="sec"><span class="ct">6</span><h2>run it yourself</h2><p>each one needs a server. screenshots + three commands inside.</p></div>
+          <div class="grid three">
+            <a class="card is-hover" style="--c:var(--c-golinks)" href="/vibe/bitly/"><span class="insp">inspired by Bitly</span><span class="num">03</span><h3>golinks</h3><p class="d">Link shortener with click analytics and QR codes on your own domain.</p><div class="ft"><span class="badge srv">needs a server</span><span class="tag">cloudflare workers + kv + d1</span></div></a>
+            <a class="card is-press" style="--c:var(--c-linkinbio)" href="/vibe/linktree/"><span class="insp">inspired by Linktree</span><span class="num">04</span><h3>linkinbio</h3><p class="d">Link-in-bio page with first-party click tracking. Zero dependencies.</p><div class="ft"><span class="badge srv">needs a server</span><span class="tag">node</span></div></a>
+            <a class="card" style="--c:var(--c-qrforge)" href="/vibe/qr/"><span class="num">05</span><h3>qrforge</h3><p class="d">QR generator with editable dynamic codes and scan tracking.</p><div class="ft"><span class="badge srv">needs a server</span><span class="tag">node + sqlite</span></div></a>
+            <a class="card is-focus" style="--c:var(--c-senja)" href="/vibe/senja/"><span class="insp">inspired by Senja</span><span class="num">06</span><h3>senja</h3><p class="d">Collect, approve and embed testimonials.</p><div class="ft"><span class="badge srv">needs a server</span><span class="tag">node + sqlite</span></div></a>
+            <a class="card" style="--c:var(--c-forms)" href="/vibe/tally/"><span class="insp">inspired by Tally</span><span class="num">07</span><h3>forms</h3><p class="d">A small form builder. Responses stay in a SQLite file you control.</p><div class="ft"><span class="badge srv">needs a server</span><span class="tag">node + sqlite</span></div></a>
+            <a class="card" style="--c:var(--c-zcal)" href="/vibe/zcal/"><span class="insp">inspired by Zcal</span><span class="num">08</span><h3>zcal</h3><p class="d">Single-user scheduling: read one calendar, publish availability, book a slot.</p><div class="ft"><span class="badge srv">needs a server</span><span class="tag">next.js</span></div></a>
+          </div>
+
+          <div class="foot"><span>made by ali, mostly by describing things to an AI and then arguing with it.</span><a href="https://github.com/alifa20/vibe">github.com/alifa20/vibe</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- hub phone dark -->
+  <section class="shot">
+    <div class="shot-label"><b>hub · phone 375 · dark</b><span>full-page capture. cream outlines and shadows on a dark sheet; colours stay put</span></div>
+    <div class="phone">
+      <div class="ph-top"><span>9:41</span><span>▂▄▆ ▮</span></div>
+      <div class="ph-url"><div>alifa20.github.io/vibe/</div></div>
+      <div class="ph-screen">
+        <div class="page t-dark">
+          <div class="wrap">
+            <div class="top"><span class="logo">ali's vibe log</span><a class="gh" href="https://github.com/alifa20/vibe">source ↗</a></div>
+            <div class="hero">
+              <h1 class="big">vibe</h1>
+              <div class="hero-t">
+                <span class="pill-ai">✦ made with ai, by ali</span>
+                <h2>eight things I built with AI.</h2>
+                <p>The first two run right here. The rest need a server, and their page says how.</p>
+              </div>
+            </div>
+            <div class="sec"><span class="ct">2</span><h2>live demos</h2></div>
+            <div class="grid two">
+              <a class="card" style="--c:var(--c-teleprompter)" href="/vibe/teleprompter/"><span class="num">01</span><h3>teleprompter</h3><p class="d">A local, single-page teleprompter. Scripts stay in your browser.</p><div class="ft"><span class="badge live">▶ live demo</span><span class="tag">vite + react + ts</span></div></a>
+              <a class="card" style="--c:var(--c-site)" href="/vibe/carrd/"><span class="insp">inspired by Carrd</span><span class="num">02</span><h3>personal-site</h3><p class="d">One-page personal site. content.json is the CMS.</p><div class="ft"><span class="badge live">▶ live demo</span><span class="tag">node build → static html</span></div></a>
+            </div>
+            <div class="sec"><span class="ct">6</span><h2>run it yourself</h2></div>
+            <div class="grid three">
+              <a class="card" style="--c:var(--c-golinks)" href="/vibe/bitly/"><span class="insp">inspired by Bitly</span><span class="num">03</span><h3>golinks</h3><p class="d">Link shortener with click analytics and QR codes on your own domain.</p><div class="ft"><span class="badge srv">needs a server</span><span class="tag">cloudflare workers + kv + d1</span></div></a>
+              <a class="card" style="--c:var(--c-linkinbio)" href="/vibe/linktree/"><span class="insp">inspired by Linktree</span><span class="num">04</span><h3>linkinbio</h3><p class="d">Link-in-bio page with first-party click tracking. Zero dependencies.</p><div class="ft"><span class="badge srv">needs a server</span><span class="tag">node</span></div></a>
+              <a class="card" style="--c:var(--c-qrforge)" href="/vibe/qr/"><span class="num">05</span><h3>qrforge</h3><p class="d">QR generator with editable dynamic codes and scan tracking.</p><div class="ft"><span class="badge srv">needs a server</span><span class="tag">node + sqlite</span></div></a>
+              <a class="card" style="--c:var(--c-senja)" href="/vibe/senja/"><span class="insp">inspired by Senja</span><span class="num">06</span><h3>senja</h3><p class="d">Collect, approve and embed testimonials.</p><div class="ft"><span class="badge srv">needs a server</span><span class="tag">node + sqlite</span></div></a>
+              <a class="card" style="--c:var(--c-forms)" href="/vibe/tally/"><span class="insp">inspired by Tally</span><span class="num">07</span><h3>forms</h3><p class="d">A small form builder. Responses stay in a SQLite file you control.</p><div class="ft"><span class="badge srv">needs a server</span><span class="tag">node + sqlite</span></div></a>
+              <a class="card" style="--c:var(--c-zcal)" href="/vibe/zcal/"><span class="insp">inspired by Zcal</span><span class="num">08</span><h3>zcal</h3><p class="d">Single-user scheduling: read one calendar, publish availability, book a slot.</p><div class="ft"><span class="badge srv">needs a server</span><span class="tag">next.js</span></div></a>
+            </div>
+            <div class="foot"><span>made by ali, with a lot of help from AI.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- project page desktop light -->
+  <section class="shot">
+    <div class="shot-label"><b>project page: zcal · desktop 1200 · light</b><span>zcal's sky blue carries from its hub sticker to the page band and the switcher dot</span></div>
+    <div class="browser">
+      <div class="bbar"><div class="dots"><i></i><i></i><i></i></div><div class="url">alifa20.github.io/vibe/zcal/</div><div style="width:58px"></div></div>
+      <div class="vnav-wrap">
+        <nav class="vnav" aria-label="vibe projects">
+          <a class="back" href="/vibe/">← vibe</a>
+          <span class="crumb">/ zcal</span>
+          <div class="vsw">
+            <a class="step" href="/vibe/tally/" aria-label="previous: forms">‹<span class="lbl">forms</span></a>
+            <details><summary aria-label="switch project, current: zcal"><span class="dot" style="--c:var(--c-zcal)"></span>zcal<span class="tri">▼</span></summary></details>
+            <a class="step" href="/vibe/teleprompter/" aria-label="next: teleprompter"><span class="lbl">teleprompter</span>›</a>
+          </div>
+        </nav>
+      </div>
+      <div class="page t-light">
+        <div class="pband">
+          <div>
+            <span class="num">08</span>
+            <h1>zcal</h1>
+            <p>Single-user scheduling: read one calendar, publish availability, book a slot.</p>
+          </div>
+          <div class="side">
+            <span class="insp">inspired by Zcal</span>
+            <span class="badge srv">needs a server</span>
+            <span class="tag">next.js + sqlite</span>
+          </div>
+        </div>
+        <div class="pbody">
+          <div>
+            <div class="shotf"><span class="lab">screenshot: booking page</span><div class="in"></div></div>
+            <div class="mini">
+              <div class="shotf"><span class="lab">screenshot: pick a time</span><div class="in"></div></div>
+              <div class="shotf"><span class="lab">screenshot: booked!</span><div class="in"></div></div>
+            </div>
+          </div>
+          <div>
+            <h2 class="h2">what it does</h2>
+            <ul class="feats">
+              <li><span>reads one calendar</span></li>
+              <li><span>publishes your free time</span></li>
+              <li><span>a visitor grabs a slot, no account</span></li>
+              <li><span>writes the event back</span></li>
+            </ul>
+            <h2 class="h2">run it locally</h2>
+            <div class="termbox">
+              <div class="h"><span>~/vibe</span><button class="copy" type="button">copy</button></div>
+<pre><span class="p">$</span> cd zcal
+<span class="p">$</span> npm run bootstrap  <span class="c"># deps + .env + sample data</span>
+<span class="p">$</span> npm run dev        <span class="c"># localhost:3000</span></pre>
+            </div>
+            <p class="why">Needs Node 20.9+. It can't live on GitHub Pages because your bookings sit in a SQLite file.</p>
+            <a class="srcbtn" href="https://github.com/alifa20/vibe/tree/main/zcal"><span>see the source on GitHub</span><span>↗</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- nav strip 375 over teleprompter -->
+  <section class="shot">
+    <div class="shot-label"><b>nav strip · phone 375 · over teleprompter's library</b><span>left: closed. right: switcher open, teleprompter marked "you're here"</span></div>
+    <div class="row-of">
+      <div class="phone">
+        <div class="ph-top"><span>9:41</span><span>▂▄▆ ▮</span></div>
+        <div class="ph-url"><div>alifa20.github.io/vibe/teleprompter/</div></div>
+        <div class="ph-screen fixed">
+          <div class="vnav-wrap">
+            <nav class="vnav" aria-label="vibe projects">
+              <a class="back" href="/vibe/">← vibe</a>
+              <div class="vsw">
+                <a class="step" href="/vibe/zcal/" aria-label="previous: zcal">‹</a>
+                <details><summary aria-label="switch project, current: teleprompter"><span class="dot" style="--c:var(--c-teleprompter)"></span>teleprompter<span class="tri">▼</span></summary></details>
+                <a class="step" href="/vibe/carrd/" aria-label="next: personal-site">›</a>
+              </div>
+            </nav>
+          </div>
+          <div class="tp">
+            <h3>Teleprompter</h3>
+            <p class="m">Scripts are saved in this browser only. Nothing is uploaded anywhere.</p>
+            <div class="lh"><span class="lbl">Scripts</span><span class="btn">+ New</span></div>
+            <ul>
+              <li class="on"><b>Q3 all-hands opener</b><span>11/18/2026, 9:12:40 AM</span></li>
+              <li><b>YouTube intro, take 4</b><span>11/14/2026, 8:03:11 PM</span></li>
+              <li><b>Wedding toast (final final)</b><span>11/02/2026, 10:47:55 PM</span></li>
+              <li><b>Podcast ad read, 60s</b><span>10/29/2026, 1:20:02 PM</span></li>
+              <li><b>Standup notes</b><span>10/21/2026, 9:00:18 AM</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="ph-top"><span>9:41</span><span>▂▄▆ ▮</span></div>
+        <div class="ph-url"><div>alifa20.github.io/vibe/teleprompter/</div></div>
+        <div class="ph-screen fixed">
+          <div class="vnav-wrap">
+            <nav class="vnav" aria-label="vibe projects">
+              <a class="back" href="/vibe/">← vibe</a>
+              <div class="vsw">
+                <a class="step" href="/vibe/zcal/" aria-label="previous: zcal">‹</a>
+                <details open><summary aria-label="switch project, current: teleprompter"><span class="dot" style="--c:var(--c-teleprompter)"></span>teleprompter<span class="tri">▲</span></summary>
+                  <ul class="menu">
+                    <li class="g">live demos</li>
+                    <li><a href="/vibe/teleprompter/" aria-current="page" style="--c:var(--c-teleprompter)"><span class="sq"></span>teleprompter<span class="here">you're here</span></a></li>
+                    <li><a href="/vibe/carrd/" style="--c:var(--c-site)"><span class="sq"></span>personal-site</a></li>
+                    <li class="g">run it yourself</li>
+                    <li><a href="/vibe/bitly/" style="--c:var(--c-golinks)"><span class="sq"></span>golinks</a></li>
+                    <li><a href="/vibe/linktree/" style="--c:var(--c-linkinbio)"><span class="sq"></span>linkinbio</a></li>
+                    <li><a href="/vibe/qr/" style="--c:var(--c-qrforge)"><span class="sq"></span>qrforge</a></li>
+                    <li><a href="/vibe/senja/" style="--c:var(--c-senja)"><span class="sq"></span>senja</a></li>
+                    <li><a href="/vibe/tally/" style="--c:var(--c-forms)"><span class="sq"></span>forms</a></li>
+                    <li><a href="/vibe/zcal/" style="--c:var(--c-zcal)"><span class="sq"></span>zcal</a></li>
+                  </ul>
+                </details>
+                <a class="step" href="/vibe/carrd/" aria-label="next: personal-site">›</a>
+              </div>
+            </nav>
+          </div>
+          <div class="tp">
+            <h3>Teleprompter</h3>
+            <p class="m">Scripts are saved in this browser only. Nothing is uploaded anywhere.</p>
+            <div class="lh"><span class="lbl">Scripts</span><span class="btn">+ New</span></div>
+            <ul>
+              <li class="on"><b>Q3 all-hands opener</b><span>11/18/2026, 9:12:40 AM</span></li>
+              <li><b>YouTube intro, take 4</b><span>11/14/2026, 8:03:11 PM</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>strip anatomy at 375:</b> 56px tall yellow strip, 8px side padding. ← vibe pill (≈86) · ‹ (44) · ● teleprompter ▼ (≈160) · › (44), 6px gaps. one line, all targets 44px. the yellow belongs to vibe, so it reads as "the vibe bar" over any app, dark or light. switcher is a native &lt;details&gt;; each project keeps its sticker colour in the list.</p>
+  </section>
+
+</div>
+</body>
+</html>

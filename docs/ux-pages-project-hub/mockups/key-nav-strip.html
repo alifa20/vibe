@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vibe nav strip</title>
+<style>
+/* =====================================================================
+   vibe key screens: shared tokens + components (inlined per file)
+   source of truth: DESIGN.md (visual) + EXPERIENCE.md (behaviour)
+   project colours come from classes (.p-zcal etc.), never inline --c styles
+   schemes are forced with .t-light / .t-dark so both can sit side by side;
+   the real build switches them with prefers-color-scheme.
+   ===================================================================== */
+:root{
+  --sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --vibe-y:#ffd23f; /* nav-bg: vibe's own yellow */
+  --redline:#e4007c; /* presentation-only annotation colour */
+}
+/* project colours: same in both schemes, text on them is always #121212 */
+.p-teleprompter{--c:#ff5247}
+.p-personal-site{--c:#ffd23f}
+.p-golinks{--c:#4d86ff}
+.p-linkinbio{--c:#ff8fcf}
+.p-qrforge{--c:#a07bff}
+.p-senja{--c:#c8f03c}
+.p-forms{--c:#ff9f2e}
+.p-zcal{--c:#5cd2ff}
+
+.t-light{--bg:#fff3d6;--surface:#ffffff;--ink:#121212;--ink-2:#4b4740;--bd:#121212;--sh:#121212;--dots:#f1dfb4;color-scheme:light}
+.t-dark{--bg:#17151d;--surface:#24212c;--ink:#f6f0e2;--ink-2:#b9b2a3;--bd:#f6f0e2;--sh:#f6f0e2;--dots:#23202a;color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:#efe5cb;color:#121212;font:500 16px/1.45 var(--sans)}
+a{color:inherit}
+
+/* ---------- presentation board ---------- */
+.board{padding:44px 56px 120px;min-width:1340px}
+.deck{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:48px;align-items:end;max-width:1212px;margin:0 0 56px;padding:0 0 26px;border-bottom:3px solid #121212}
+.kicker{display:inline-block;background:#121212;color:#ffd23f;font:800 13px/1 var(--sans);padding:8px 12px;margin:0 0 16px;transform:rotate(-2deg)}
+.deck h1{font:900 54px/.94 var(--sans);letter-spacing:-.04em;margin:0 0 14px}
+.deck p{margin:0;font-size:17px;max-width:58ch;color:#4b4740}
+.spines{background:#fff;border:3px solid #121212;box-shadow:6px 6px 0 #121212;padding:14px 16px 16px}
+.spines h2{font:800 12px/1 var(--mono);letter-spacing:.06em;margin:0 0 10px}
+.spines ul{list-style:none;margin:0;padding:0;display:grid;gap:7px;font-size:13px;font-weight:700;line-height:1.35}
+.spines li b{display:inline-block;min-width:34px;text-align:center;font:800 10px/1 var(--mono);background:#121212;color:#fff;padding:4px 5px;margin-right:6px;vertical-align:1px}
+.spines li b.x{background:#fff;color:#121212;outline:2px solid #121212;outline-offset:-2px}
+
+.shot{margin:0 0 84px}
+.shot-label{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:0 0 16px}
+.shot-label b{background:#121212;color:#fff3d6;font:800 14px/1 var(--sans);padding:7px 10px}
+.shot-label span{font-size:14px;color:#4b4740}
+.shot-label i{font:800 12px/1 var(--mono);font-style:normal;border:2px solid #121212;background:#fff;padding:5px 7px}
+.note{max-width:1200px;margin:20px 0 0;font-size:14px;color:#4b4740}
+.note b{color:#121212}
+.row-of{display:flex;gap:44px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:14px}
+.col > .cap{font:800 13px/1.3 var(--sans);max-width:401px}
+.col > .cap span{display:block;font-weight:500;color:#4b4740;margin-top:4px}
+
+/* device frames */
+.browser{width:1200px;border:3px solid #121212;background:#fff;box-shadow:10px 10px 0 #121212}
+.bbar{height:42px;display:flex;align-items:center;gap:14px;padding:0 14px;background:#fff;border-bottom:3px solid #121212;font:600 12px/1 var(--sans)}
+.bdots{display:flex;gap:7px}.bdots i{width:13px;height:13px;border-radius:50%;border:2px solid #121212}
+.bdots i:nth-child(1){background:#ff5247}.bdots i:nth-child(2){background:#ffd23f}.bdots i:nth-child(3){background:#c8f03c}
+.url{flex:1;max-width:560px;margin:0 auto;height:26px;border:2px solid #121212;display:flex;align-items:center;justify-content:center}
+.bbar .sp{width:58px}
+.phone{width:401px;flex:none;border:13px solid #121212;border-radius:48px;background:#121212;overflow:hidden;box-shadow:10px 10px 0 #cbbd98}
+.ph-top{color:#fff;font:700 13px/1 var(--sans);padding:12px 24px 8px;display:flex;justify-content:space-between}
+.ph-url{padding:0 10px 10px}.ph-url div{background:#2a2a2a;color:#e8e2d4;border-radius:10px;height:30px;display:flex;align-items:center;justify-content:center;font:600 12px/1 var(--sans)}
+.ph-screen{width:375px;border-radius:0 0 35px 35px;overflow:hidden;background:#fff}
+.ph-screen.fixed{height:700px}
+.ph-screen.tall{height:780px}
+
+/* redline callouts (presentation only) */
+.callout{position:absolute;z-index:20;display:flex;align-items:center;gap:8px;font:800 12px/1.2 var(--mono);color:#fff;white-space:nowrap;pointer-events:none}
+.callout em{font-style:normal;background:var(--redline);padding:6px 8px;box-shadow:3px 3px 0 #121212}
+.callout::before{content:"";width:34px;height:3px;background:var(--redline);order:0}
+.callout.flip{flex-direction:row-reverse}
+
+/* ---------- vibe page ---------- */
+.page{background-color:var(--bg);background-image:radial-gradient(var(--dots) 1.6px,transparent 1.8px);background-size:20px 20px;color:var(--ink);font:500 16px/1.45 var(--sans);container-type:inline-size}
+.page a{text-decoration:none}
+.wrap{padding:30px 48px 44px}
+.top{display:flex;justify-content:space-between;align-items:center;margin:0 0 34px}
+.logo{font:900 22px/1 var(--sans);letter-spacing:-.03em}
+.gh{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:3px solid var(--bd);background:var(--surface);color:var(--ink);box-shadow:4px 4px 0 var(--sh);font:800 14px/1 var(--sans)}
+.gh:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--sh)}
+
+.hero{display:flex;align-items:flex-end;gap:34px;margin:0 0 50px}
+.big{font:900 168px/.8 var(--sans);letter-spacing:-.07em;margin:0;padding:18px 26px 26px;background:var(--vibe-y);color:#121212;border:4px solid var(--bd);box-shadow:10px 10px 0 var(--sh);transform:rotate(-3deg)}
+.hero-t h2{font:900 42px/1 var(--sans);letter-spacing:-.03em;margin:0 0 12px;max-width:22ch}
+.hero-t h2 .dash{color:var(--ink-2)}
+.hero-t p{margin:0;max-width:48ch;color:var(--ink-2);font-size:17px}
+.pill-ai{display:inline-block;margin:0 0 14px;font:800 12px/1 var(--mono);border:2px solid var(--bd);padding:6px 10px;border-radius:999px;background:var(--surface);transform:rotate(2deg)}
+
+.sec{display:flex;align-items:center;gap:12px;margin:0 0 20px}
+.sec h2{font:900 26px/1 var(--sans);letter-spacing:-.02em;margin:0}
+.sec .ct{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:3px solid var(--bd);background:var(--surface);font:900 15px/1 var(--sans)}
+.sec p{margin:0 0 0 6px;color:var(--ink-2)}
+.grid{display:grid;gap:26px;margin:0 0 46px}
+.grid.two{grid-template-columns:1fr 1fr}
+.grid.three{grid-template-columns:repeat(3,1fr)}
+.grid.four{grid-template-columns:repeat(4,1fr)}
+
+/* project card: the whole card is one <a>, nothing nested is clickable */
+.card{position:relative;display:flex;flex-direction:column;background:var(--c);color:#121212;border:3px solid var(--bd);box-shadow:6px 6px 0 var(--sh);padding:18px 20px;min-height:226px;transition:transform .12s,box-shadow .12s}
+.grid.two .card{min-height:250px}
+.grid.four .card{min-height:268px;padding:18px 18px}
+.card:hover,.card.is-hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--sh)}
+.card:active,.card.is-press{transform:translate(4px,4px);box-shadow:2px 2px 0 var(--sh)}
+.card:focus-visible,.card.is-focus{outline:3px dashed var(--ink);outline-offset:5px}
+@media (prefers-reduced-motion:reduce){.card,.card:hover,.card:active{transform:none;transition:box-shadow .12s}}
+.num{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:3px solid #121212;background:#fff;color:#121212;font:900 15px/1 var(--sans);margin:0 0 14px}
+.card h3{font:900 32px/1 var(--sans);letter-spacing:-.03em;margin:0 0 8px}
+.grid.two .card h3{font-size:42px}
+.grid.four .card h3{font-size:28px}
+.card .d{margin:0 0 18px;font-size:16px;max-width:36ch}
+.card .ft{margin-top:auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-right:26px}
+.tag{font:700 12px/1.2 var(--mono);background:#fff;color:#121212;border:2px solid #121212;padding:5px 8px}
+.badge{font:800 13px/1 var(--sans);border:2px solid #121212;border-radius:999px;padding:7px 11px;white-space:nowrap}
+.badge.live{background:#121212;color:var(--c)}
+.badge.srv{background:#fff;color:#121212;border-style:dashed}
+.insp{position:absolute;top:-14px;right:18px;background:#fff;color:#121212;border:2px solid #121212;font:800 12px/1 var(--sans);padding:7px 10px;transform:rotate(-3deg);box-shadow:3px 3px 0 #121212}
+.insp.r{transform:rotate(4deg)}
+.arrow{position:absolute;right:16px;bottom:14px;font:900 24px/1 var(--sans)}
+.foot{border-top:3px solid var(--bd);padding-top:20px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;font-weight:700}
+.foot a{border-bottom:3px solid var(--ink);padding-bottom:1px}
+.foot .m{font:700 13px/1 var(--mono);color:var(--ink-2)}
+
+/* 404 */
+.nf{display:flex;flex-direction:column;align-items:center;padding:56px 0 84px}
+.nf-sticker{margin:0;text-align:center;background:var(--vibe-y);color:#121212;border:4px solid var(--bd);box-shadow:10px 10px 0 var(--sh);transform:rotate(-4deg);padding:26px 44px 32px}
+.nf-sticker b{display:block;font:900 168px/.8 var(--sans);letter-spacing:-.07em}
+.nf-sticker span{display:block;font:900 42px/1 var(--sans);letter-spacing:-.03em;margin-top:16px}
+.btn-back{display:inline-flex;align-items:center;gap:10px;margin-top:64px;min-height:56px;padding:0 26px;border:3px solid var(--bd);background:var(--surface);color:var(--ink);box-shadow:6px 6px 0 var(--sh);font:900 18px/1 var(--sans)}
+
+/* hub < 600px */
+@container (max-width:600px){
+  .wrap{padding:18px 16px 30px}
+  .top{margin-bottom:22px}
+  .gh{padding:0 12px;font-size:13px}
+  .hero{flex-direction:column;align-items:flex-start;gap:26px;margin-bottom:36px}
+  .big{font-size:104px;padding:12px 18px 18px;margin-left:6px;box-shadow:7px 7px 0 var(--sh)}
+  .hero-t h2{font-size:30px}
+  .hero-t p{font-size:16px}
+  .grid.two,.grid.three,.grid.four{grid-template-columns:1fr;gap:24px}
+  .card,.grid.two .card,.grid.four .card{min-height:0;padding:16px}
+  .card h3,.grid.two .card h3,.grid.four .card h3{font-size:28px}
+  .card .ft{padding-right:0}
+  .num{width:34px;height:34px;font-size:13px;margin-bottom:10px}
+  .sec h2{font-size:22px}
+  .sec p{display:none}
+  .arrow{display:none}
+}
+
+/* ---------- project page ---------- */
+.pband{background:var(--c);color:#121212;border-bottom:4px solid var(--bd);padding:40px 48px 44px;display:grid;grid-template-columns:1fr auto;gap:30px;align-items:end}
+.pband .num{width:52px;height:52px;font-size:18px;margin:0 0 12px}
+.pband h1{font:900 168px/.8 var(--sans);letter-spacing:-.07em;margin:0 0 .24em}
+.pband p{font:700 22px/1.25 var(--sans);margin:0;max-width:32ch}
+.pband .side{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.pband .insp{position:static;transform:rotate(-4deg);font-size:14px}
+.pbody{padding:46px 48px 60px;display:grid;grid-template-columns:1.25fr 1fr;gap:46px}
+.shotf{background:var(--surface);border:3px solid var(--bd);box-shadow:8px 8px 0 var(--sh);position:relative;margin:0}
+.shotf .in{height:340px;margin:12px;border:2px dashed var(--ink-2);display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(-45deg,transparent 0 14px,var(--dots) 14px 16px);font:700 12px/1.3 var(--mono);color:var(--ink-2);text-align:center}
+.shotf .in span{background:var(--surface);padding:6px 8px;border:2px solid var(--ink-2)}
+.shotf .lab{position:absolute;left:-12px;top:-16px;z-index:1;background:var(--c);color:#121212;border:2px solid #121212;font:800 13px/1 var(--mono);padding:8px 10px;transform:rotate(-3deg);box-shadow:3px 3px 0 #121212}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:30px}
+.mini .shotf .in{height:140px}
+.mini .lab{background:#fff;font-size:12px}
+.mini .shotf:nth-child(2) .lab{transform:rotate(2deg)}
+.h2{font:900 26px/1 var(--sans);letter-spacing:-.02em;margin:0 0 16px}
+.feats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 36px;padding:0;list-style:none;counter-reset:f}
+.feats li{counter-increment:f;border:3px solid var(--bd);background:var(--surface);padding:12px 14px;font-weight:700;line-height:1.3;box-shadow:4px 4px 0 var(--sh)}
+.feats li::before{content:counter(f);display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--c);border:2px solid #121212;color:#121212;font:900 13px/1 var(--sans);margin:0 0 8px}
+.feats li small{display:block;font-weight:500;color:var(--ink-2);margin-top:3px;font-size:14px}
+.termbox{background:#121212;color:#f6f0e2;border:3px solid var(--bd);box-shadow:8px 8px 0 var(--c)}
+.termbox .h{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #3a3a3a;padding:8px 8px 8px 14px;font:700 12px/1 var(--mono);color:#b9b2a3}
+.copy{font:900 14px/1 var(--sans);background:#ffd23f;color:#121212;border:2px solid #f6f0e2;min-height:44px;min-width:92px;padding:0 14px;box-shadow:3px 3px 0 #f6f0e2;cursor:pointer}
+.copy:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 #f6f0e2}
+.copy:active{transform:translate(3px,3px);box-shadow:none}
+.copy:focus-visible{outline:3px dashed #ffd23f;outline-offset:4px}
+.copy.is-done{transform:translate(3px,3px);box-shadow:none}
+.termbox pre{margin:0;padding:14px 16px 16px;font:15px/1.75 var(--mono);overflow-x:auto}
+.termbox .p{color:var(--c)}
+.termbox .c{color:#8d877b}
+.why{margin:20px 0 28px;color:var(--ink-2)}
+.why code{font:13px var(--mono);color:var(--ink);background:var(--surface);border:2px solid var(--bd);padding:1px 5px}
+.srcbtn{display:flex;align-items:center;justify-content:space-between;min-height:56px;padding:0 20px;border:3px solid var(--bd);background:#c8f03c;color:#121212;box-shadow:6px 6px 0 var(--sh);font:900 18px/1 var(--sans)}
+.srcbtn:hover{transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--sh)}
+
+@container (max-width:600px){
+  .pband{grid-template-columns:1fr;padding:22px 16px 26px;gap:20px}
+  .pband .num{width:40px;height:40px;font-size:15px}
+  .pband h1{font-size:104px}
+  .pband p{font-size:18px}
+  .pband .side{flex-direction:row;flex-wrap:wrap;align-items:center}
+  .pbody{grid-template-columns:1fr;padding:30px 16px 40px;gap:40px}
+  .shotf .in{height:210px}
+  .mini{grid-template-columns:1fr;gap:30px;margin-top:30px}
+  .mini .shotf .in{height:150px}
+  .h2{font-size:22px}
+  .feats li{padding:10px 12px;font-size:15px}
+  .termbox pre{font-size:14px;padding:12px 14px 14px}
+}
+
+/* ---------- nav strip (injected; classes only, CSP-safe) ---------- */
+.vnav-wrap{container-type:inline-size}
+.vnav{--y:#ffd23f;--k:#121212;position:relative;display:flex;align-items:center;gap:6px;height:56px;padding:0 8px;background:var(--y);color:var(--k);border-bottom:3px solid var(--k);font:800 15px/1 var(--sans);white-space:nowrap;color-scheme:light}
+.vnav a,.vnav summary{color:var(--k);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;cursor:pointer}
+.vnav a:focus-visible,.vnav summary:focus-visible,.vnav .is-focus{outline:3px dashed var(--k);outline-offset:2px}
+.vnav .back{background:var(--k);color:var(--y);padding:0 14px;gap:8px;border:2px solid var(--k);border-radius:999px}
+.vnav .back:hover{background:#fff;color:var(--k)}
+.vnav .crumb{font:700 13px/1 var(--mono);padding:0 8px}
+.vnav .vsw{margin-left:auto;display:flex;align-items:center;gap:6px}
+.vnav .step{background:#fff;border:2px solid var(--k);box-shadow:3px 3px 0 var(--k);font-size:18px;padding:0 10px}
+.vnav .step .lbl{font:800 14px/1 var(--sans);margin:0 6px}
+.vnav .step:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--k)}
+.vnav details{display:flex;min-width:0}
+.vnav summary{list-style:none;background:#fff;border:2px solid var(--k);border-radius:999px;padding:0 14px;gap:8px;box-shadow:3px 3px 0 var(--k)}
+.vnav summary::-webkit-details-marker{display:none}
+.vnav summary .dot{width:14px;height:14px;flex:none;border-radius:50%;border:2px solid var(--k);background:var(--c)}
+.vnav summary .nm{max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.vnav summary .tri{font-size:11px}
+.vnav details[open] summary{transform:translate(3px,3px);box-shadow:none}
+.vnav .menu{position:absolute;top:62px;right:8px;width:330px;z-index:5;list-style:none;margin:0;padding:10px;background:#fff;border:3px solid var(--k);box-shadow:6px 6px 0 var(--k);display:grid;gap:6px;white-space:normal}
+.vnav .menu .g{font:800 11px/1 var(--mono);letter-spacing:.08em;padding:8px 4px 2px;color:#4b4740}
+.vnav .menu a{display:flex;width:100%;justify-content:flex-start;gap:10px;padding:0 10px;border:2px solid transparent;font-size:16px}
+.vnav .menu a:hover{border-color:var(--k)}
+.vnav .menu .sq{width:18px;height:18px;flex:none;border:2px solid var(--k);background:var(--c)}
+.vnav .menu .here{margin-left:auto;font:800 11px/1 var(--mono);background:var(--k);color:#fff;padding:5px 8px;border-radius:999px}
+.vnav .menu a[aria-current]{background:var(--c);border-color:var(--k);box-shadow:3px 3px 0 var(--k)}
+.vnav .menu .mfoot{border-top:3px solid var(--k);margin-top:6px;padding-top:8px}
+.vnav .menu .mfoot a{justify-content:space-between;font:800 13px/1 var(--mono);background:#fff3d6;border-color:var(--k)}
+@container (max-width:600px){
+  .vnav .crumb,.vnav .step .lbl{display:none}
+  .vnav .menu{left:8px;right:8px;width:auto}
+}
+
+
+/* teleprompter stand-in (the real app's own dark UI, not vibe tokens) */
+.tp{background:#0a0c0f;color:#e9eef4;font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.tp h3{margin:0 0 4px;font-size:22px}
+.tp .m{color:#94a3b4;font-size:13px;margin:0 0 18px}
+.tp .lh{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px}
+.tp .lbl{text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:#94a3b4}
+.tp .btn{border:1px solid #2a323d;background:#1b2028;color:#e9eef4;border-radius:8px;padding:7px 12px;font-size:13px}
+.tp .btn.pri{background:#6cc2ff;border-color:#6cc2ff;color:#0a0c0f;font-weight:600}
+.tp ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.tp li{background:#14181e;border:1px solid #2a323d;border-radius:8px;padding:10px 12px}
+.tp li.on{border-color:#6cc2ff;box-shadow:inset 3px 0 0 #6cc2ff}
+.tp li b{display:block;font-weight:600;font-size:15px}
+.tp li span{font-size:12px;color:#94a3b4}
+.tp-ph{padding:20px 16px;min-height:640px}
+.tp-desk{display:grid;grid-template-columns:330px 1fr;min-height:640px}
+.tp-desk .side{border-right:1px solid #1f262f;padding:24px 20px}
+.tp-desk .ed{padding:24px 28px;display:flex;flex-direction:column;gap:12px}
+.tp .field{background:#14181e;border:1px solid #2a323d;border-radius:8px;padding:10px 12px}
+.tp .field.title{font-size:18px;font-weight:600}
+.tp .field.body{flex:1;font-size:15px;line-height:1.6;color:#cdd5df;white-space:pre-line}
+.tp .bar{display:flex;gap:8px;align-items:center}
+.tp .bar .sv{margin-left:auto;color:#94a3b4;font-size:12px}
+
+/* personal-site stand-in (its own light, serif-headed design) */
+.ps{background:#fbfaf7;color:#1d1d1f;font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:64px 0 72px}
+.ps .col1{max-width:680px;margin:0 auto}
+.ps .status{font-size:13px;color:#5f5f66;display:flex;align-items:center;gap:8px;margin:0 0 22px}
+.ps .status i{width:8px;height:8px;border-radius:50%;background:#b4462b}
+.ps .who{display:flex;align-items:center;gap:22px;margin:0 0 22px}
+.ps .av{width:88px;height:88px;border-radius:50%;background:#b4462b;color:#fbfaf7;display:flex;align-items:center;justify-content:center;font:600 36px/1 "Iowan Old Style",Palatino,Georgia,serif}
+.ps h1{margin:0;font-size:40px;line-height:1.1;letter-spacing:-.01em}
+.ps .hl{margin:4px 0 0;font:italic 22px/1.3 "Iowan Old Style",Palatino,Georgia,serif;color:#3b3b40}
+.ps p{margin:0 0 16px;color:#3b3b40}
+.ps .soc{display:flex;gap:18px;margin:0 0 44px;font-size:15px}
+.ps .soc a{color:#b4462b;text-decoration:underline;text-underline-offset:3px}
+.ps h2{font:600 13px/1 system-ui,-apple-system,sans-serif;text-transform:uppercase;letter-spacing:.12em;color:#5f5f66;margin:0 0 12px}
+.ps ul{list-style:none;margin:0;padding:0;border-top:1px solid #e3e0d8}
+.ps li{display:flex;justify-content:space-between;gap:20px;padding:14px 0;border-bottom:1px solid #e3e0d8}
+.ps li b{font-weight:600}
+.ps li span{color:#5f5f66;font-size:15px}
+.ps li em{font-style:normal;color:#b4462b}
+.ps footer{margin-top:44px;font-size:13px;color:#77777e}
+
+/* prompter running: full-screen overlay covers the strip */
+.pr{position:relative;height:660px;background:#000;color:#f2f2f2;overflow:hidden;font:600 54px/1.42 system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif}
+.pr .txt{max-width:920px;margin:0 auto;padding-top:96px}
+.pr .txt p{margin:0}
+.pr .past{color:#4e535a}
+.pr .now{color:#fff}
+.pr .next{color:#d9dee5}
+.pr .rl{position:absolute;left:0;right:0;top:265px;height:2px;background:#4da3ff}
+.pr .rl::before,.pr .rl::after{content:"";position:absolute;top:-7px;border:8px solid transparent}
+.pr .rl::before{left:0;border-left-color:#4da3ff}
+.pr .rl::after{right:0;border-right-color:#4da3ff}
+.pr .hint{position:absolute;right:18px;top:14px;font:12px/1 ui-monospace,Menlo,monospace;color:#3a3f46}
+
+/* annotated strip */
+.annot-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:36px;align-items:start;max-width:1228px}
+.annot{background:#fff;border:3px solid #121212;box-shadow:6px 6px 0 #121212;padding:22px 26px 18px 72px}
+.ph-screen{background:#0a0c0f}
+.annot .zoom{zoom:2;width:375px;padding:34px 0 34px;position:relative}
+.annot .zoom .vnav-wrap{width:375px}
+.annot .scale{font:800 11px/1 var(--mono);color:#4b4740;margin:0;text-align:right}
+.vnav .ann{position:relative;outline:2px solid var(--redline);outline-offset:3px}
+.vnav .ann::before{content:attr(data-n);position:absolute;top:-30px;left:50%;transform:translateX(-50%);width:20px;height:20px;border-radius:50%;background:var(--redline);color:#fff;font:900 11px/20px var(--sans);text-align:center}
+.vnav .ann::after{content:attr(data-w);position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);font:800 9px/1 var(--mono);color:var(--redline);white-space:nowrap;background:#fff;padding:2px 3px}
+.vnav .ann.step .lbl{display:none}
+.dim{position:absolute;left:-26px;top:34px;height:56px;width:14px;border:2px solid var(--redline);border-right:0}
+.dim span{position:absolute;left:-2px;top:50%;transform:translate(-100%,-50%);font:800 9px/1 var(--mono);color:var(--redline);padding-right:3px}
+.keys{background:#fff;border:3px solid #121212;box-shadow:6px 6px 0 #121212;padding:18px 20px;font-size:14px}
+.keys h3{font:900 20px/1 var(--sans);letter-spacing:-.02em;margin:0 0 12px}
+.keys ol{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:8px}
+.keys li{display:flex;gap:10px;align-items:flex-start}
+.keys li b{flex:none;width:22px;height:22px;border-radius:50%;background:var(--redline);color:#fff;font:900 12px/22px var(--sans);text-align:center}
+.keys li b.o{background:#fff;color:var(--redline);border:2px solid var(--redline);line-height:18px}
+.keys code{font:12px var(--mono);background:#fff3d6;border:1.5px solid #121212;padding:0 4px}
+.keys p{margin:0 0 8px}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font:800 13px/1 var(--mono);margin:0 0 14px}
+.flow span{border:2px solid #121212;padding:6px 8px;background:#ffd23f}
+.flow i{font-style:normal;color:var(--redline)}
+
+</style>
+</head>
+<body>
+<div class="board">
+<header class="deck"><div><span class="kicker">vibe · key screens · 3 of 3</span><h1>the nav strip over the live demos</h1><p>the only vibe chrome on a live demo: a 56px yellow bar in the page flow, above the app. it looks the same on a dark app, a light app, and in both schemes; the prompter is the one thing allowed to cover it.</p></div><aside class="spines"><h2>illustrates</h2><ul><li><b>DESIGN</b>components: nav strip, nav switcher · colours: nav-* fixed across hosts</li><li><b>DESIGN</b>do's and don'ts: strip stays yellow; classes not inline style (csp)</li><li><b class="x">EXP</b>component patterns: nav strip, nav switcher (&lt;details&gt;, menu footer source link)</li><li><b class="x">EXP</b>states: switcher open, prompter running (AE1)</li><li><b class="x">EXP</b>interaction primitives: keyboard order · accessibility floor: 44px, labels</li></ul></aside></header>
+<section class="shot"><div class="shot-label"><b>teleprompter library · desktop 1200 · strip closed</b><span>the app's own dark ui (stand-in) under vibe's yellow strip; crumb and step labels show at desktop</span><i>prev wraps to zcal</i><i>next = personal-site</i></div><div class="browser"><div class="bbar"><div class="bdots"><i></i><i></i><i></i></div><div class="url">alifa20.github.io/vibe/teleprompter/</div><div class="sp"></div></div><div class="vnav-wrap"><nav class="vnav" aria-label="vibe projects"><a class="back" href="/vibe/">← vibe</a><span class="crumb">/ teleprompter</span><div class="vsw"><a class="step" href="/vibe/zcal/" aria-label="previous: zcal">‹<span class="lbl">zcal</span></a><details><summary class="p-teleprompter" aria-label="switch project, current: teleprompter"><span class="dot"></span><span class="nm">teleprompter</span><span class="tri" aria-hidden="true">▼</span></summary></details><a class="step" href="/vibe/carrd/" aria-label="next: personal-site"><span class="lbl">personal-site</span>›</a></div></nav></div><div class="tp tp-desk"><div class="side"><h3>Teleprompter</h3><p class="m">Scripts are saved in this browser only. Nothing is uploaded anywhere.</p><div class="lh"><span class="lbl">Scripts</span><span class="btn">+ New</span></div><ul><li class="on"><b>Q3 all-hands opener</b><span>11/18/2026, 9:12:40 AM</span></li><li><b>YouTube intro, take 4</b><span>11/14/2026, 8:03:11 PM</span></li><li><b>Wedding toast (final final)</b><span>11/02/2026, 10:47:55 PM</span></li><li><b>Podcast ad read, 60s</b><span>10/29/2026, 1:20:02 PM</span></li><li><b>Standup notes</b><span>10/21/2026, 9:00:18 AM</span></li></ul></div><div class="ed"><div class="field title">Q3 all-hands opener</div><div class="field body">Morning everyone. Quick one today, three things.
+
+First, we shipped the new onboarding flow on Tuesday, and activation is already up eleven percent.
+
+Second, hiring. We have two offers out and one more loop next week.
+
+Third, and this is the one I want you to remember...</div><div class="bar"><span class="btn pri">▶ Start prompter</span><span class="btn">Rename</span><span class="btn">Delete</span><span class="sv">Saved 9:12 AM</span></div></div></div></div></section>
+<section class="shot"><div class="shot-label"><b>teleprompter · phone 375</b><span>left: strip closed, one line: ← vibe ‹ [● teleprompter ▾] ›. right: switcher open, full width under the strip</span></div><div class="row-of"><div class="col"><div class="cap">closed<span>crumb and step labels hidden below 600px</span></div><div class="phone"><div class="ph-top"><span>9:41</span><span>▂▄▆ ▮</span></div><div class="ph-url"><div>alifa20.github.io/vibe/teleprompter/</div></div><div class="ph-screen fixed"><div class="vnav-wrap"><nav class="vnav" aria-label="vibe projects"><a class="back" href="/vibe/">← vibe</a><span class="crumb">/ teleprompter</span><div class="vsw"><a class="step" href="/vibe/zcal/" aria-label="previous: zcal">‹<span class="lbl">zcal</span></a><details><summary class="p-teleprompter" aria-label="switch project, current: teleprompter"><span class="dot"></span><span class="nm">teleprompter</span><span class="tri" aria-hidden="true">▼</span></summary></details><a class="step" href="/vibe/carrd/" aria-label="next: personal-site"><span class="lbl">personal-site</span>›</a></div></nav></div><div class="tp tp-ph"><h3>Teleprompter</h3><p class="m">Scripts are saved in this browser only. Nothing is uploaded anywhere.</p><div class="lh"><span class="lbl">Scripts</span><span class="btn">+ New</span></div><ul><li class="on"><b>Q3 all-hands opener</b><span>11/18/2026, 9:12:40 AM</span></li><li><b>YouTube intro, take 4</b><span>11/14/2026, 8:03:11 PM</span></li><li><b>Wedding toast (final final)</b><span>11/02/2026, 10:47:55 PM</span></li><li><b>Podcast ad read, 60s</b><span>10/29/2026, 1:20:02 PM</span></li><li><b>Standup notes</b><span>10/21/2026, 9:00:18 AM</span></li></ul></div></div></div></div><div class="col"><div class="cap">switcher open<span>grouped menu, current filled red with “you're here”, footer links to its source</span></div><div class="phone"><div class="ph-top"><span>9:41</span><span>▂▄▆ ▮</span></div><div class="ph-url"><div>alifa20.github.io/vibe/teleprompter/</div></div><div class="ph-screen tall"><div class="vnav-wrap"><nav class="vnav" aria-label="vibe projects"><a class="back" href="/vibe/">← vibe</a><span class="crumb">/ teleprompter</span><div class="vsw"><a class="step" href="/vibe/zcal/" aria-label="previous: zcal">‹<span class="lbl">zcal</span></a><details open><summary class="p-teleprompter" aria-label="switch project, current: teleprompter"><span class="dot"></span><span class="nm">teleprompter</span><span class="tri" aria-hidden="true">▲</span></summary><ul class="menu"><li class="g">live demos</li><li><a class="p-teleprompter" href="/vibe/teleprompter/" aria-current="page"><span class="sq"></span>teleprompter<span class="here">you're here</span></a></li><li><a class="p-personal-site" href="/vibe/carrd/"><span class="sq"></span>personal-site</a></li><li class="g">run it yourself</li><li><a class="p-golinks" href="/vibe/bitly/"><span class="sq"></span>golinks</a></li><li><a class="p-linkinbio" href="/vibe/linktree/"><span class="sq"></span>linkinbio</a></li><li><a class="p-qrforge" href="/vibe/qr/"><span class="sq"></span>qrforge</a></li><li><a class="p-senja" href="/vibe/senja/"><span class="sq"></span>senja</a></li><li><a class="p-forms" href="/vibe/tally/"><span class="sq"></span>forms</a></li><li><a class="p-zcal" href="/vibe/zcal/"><span class="sq"></span>zcal</a></li><li class="mfoot"><a href="https://github.com/alifa20/vibe/tree/main/teleprompter" aria-label="teleprompter: source on github"><span>source on github</span><span>↗</span></a></li></ul></details><a class="step" href="/vibe/carrd/" aria-label="next: personal-site"><span class="lbl">personal-site</span>›</a></div></nav></div><div class="tp tp-ph"><h3>Teleprompter</h3><p class="m">Scripts are saved in this browser only. Nothing is uploaded anywhere.</p><div class="lh"><span class="lbl">Scripts</span><span class="btn">+ New</span></div><ul><li class="on"><b>Q3 all-hands opener</b><span>11/18/2026, 9:12:40 AM</span></li><li><b>YouTube intro, take 4</b><span>11/14/2026, 8:03:11 PM</span></li><li><b>Wedding toast (final final)</b><span>11/02/2026, 10:47:55 PM</span></li><li><b>Podcast ad read, 60s</b><span>10/29/2026, 1:20:02 PM</span></li><li><b>Standup notes</b><span>10/21/2026, 9:00:18 AM</span></li></ul></div></div></div></div></div></section>
+<section class="shot"><div class="shot-label"><b>strip anatomy · 375 · shown at 2×</b><span>redlines are presentation only: solid magenta box = tap target, number = keyboard order</span></div><div class="annot-row"><div class="annot"><div class="zoom"><div class="dim"><span>56</span></div><div class="vnav-wrap"><nav class="vnav" aria-label="vibe projects"><a class="back ann" href="/vibe/" data-n="1" data-w="≥44 tall">← vibe</a><span class="crumb">/ teleprompter</span><div class="vsw"><a class="step ann" href="/vibe/zcal/" aria-label="previous: zcal" data-n="2" data-w="44×44">‹<span class="lbl">zcal</span></a><details><summary class="p-teleprompter ann" aria-label="switch project, current: teleprompter" data-n="3" data-w="≥44 tall"><span class="dot"></span><span class="nm">teleprompter</span><span class="tri" aria-hidden="true">▼</span></summary></details><a class="step ann" href="/vibe/carrd/" aria-label="next: personal-site" data-n="4" data-w="44×44"><span class="lbl">personal-site</span>›</a></div></nav></div></div><p class="scale">375px wide, 2× · teleprompter current</p></div><div class="keys"><h3>keyboard order and targets</h3><div class="flow"><span>← vibe</span><i>→</i><span>‹</span><i>→</i><span>● switcher</span><i>→</i><span>›</span><i>→</i><span>app</span></div><ol><li><b class="o">0</b><span>“skip to teleprompter”, before the strip, hidden until focused.</span></li><li><b>1</b><span><code>← vibe</code> back to the hub. pill, 44px tall.</span></li><li><b>2</b><span><code>‹</code> “previous: zcal” (wraps around the manifest). 44×44.</span></li><li><b>3</b><span>switcher <code>&lt;summary&gt;</code> “switch project, current: teleprompter”. enter/space opens it; tab walks the menu, footer last.</span></li><li><b>4</b><span><code>›</code> “next: personal-site”. 44×44.</span></li><li><b class="o">5</b><span>the app itself.</span></li></ol><p><b>fit at 375:</b> 8px padding, 6px gaps; ≈ 82 + 44 + 168 + 44 + gaps = ~366px. one line. a long current name truncates with an ellipsis inside the pill rather than wrapping the strip.</p><p><b>focus</b> is a 3px dashed ink ring, 2px off, on the yellow; hover only nudges the shadow, so the two never look alike.</p></div></div></section>
+<section class="shot"><div class="shot-label"><b>personal-site · desktop 1200 · light host</b><span>a light, serif-headed site with its own accent and a strict csp. the strip is still yellow, built from classes only</span><i>prev = teleprompter</i><i>next = golinks</i></div><div class="browser"><div class="bbar"><div class="bdots"><i></i><i></i><i></i></div><div class="url">alifa20.github.io/vibe/carrd/</div><div class="sp"></div></div><div class="vnav-wrap"><nav class="vnav" aria-label="vibe projects"><a class="back" href="/vibe/">← vibe</a><span class="crumb">/ personal-site</span><div class="vsw"><a class="step" href="/vibe/teleprompter/" aria-label="previous: teleprompter">‹<span class="lbl">teleprompter</span></a><details><summary class="p-personal-site" aria-label="switch project, current: personal-site"><span class="dot"></span><span class="nm">personal-site</span><span class="tri" aria-hidden="true">▼</span></summary></details><a class="step" href="/vibe/bitly/" aria-label="next: golinks"><span class="lbl">golinks</span>›</a></div></nav></div><div class="ps"><div class="col1"><p class="status"><i></i>Building small things with AI, mostly on weekends</p><div class="who"><div class="av" aria-hidden="true">A</div><div><h1>Ali</h1><p class="hl">I make small, useful web things, and argue with AI until they work.</p></div></div><p>Frontend engineer by day. By night I pick a SaaS I pay for, build the 20% of it I actually use, and keep the data on my own disk. Most of it ends up in one repo.</p><div class="soc"><a href="https://github.com/alifa20">github.com/alifa20</a><a href="https://github.com/alifa20/vibe">the vibe repo</a></div><h2>Selected work</h2><ul><li><div><b>teleprompter</b><br><span>A local teleprompter. Scripts never leave your browser.</span></div><em>↗</em></li><li><div><b>golinks</b><br><span>A link shortener with analytics, on my own domain.</span></div><em>↗</em></li><li><div><b>zcal</b><br><span>Single-user scheduling that writes back to one calendar.</span></div><em>↗</em></li><li><div><b>qrforge</b><br><span>QR codes you can re-point after they're printed.</span></div><em>↗</em></li></ul><footer>© 2026 Ali · built from content.json, no framework</footer></div></div></div></section>
+<section class="shot"><div class="shot-label"><b>prompter covers the strip (AE1)</b><span>teleprompter in prompter mode: its full-screen overlay sits over the whole viewport, strip included. esc → library → the strip is back</span></div><div class="browser"><div class="bbar"><div class="bdots"><i></i><i></i><i></i></div><div class="url">alifa20.github.io/vibe/teleprompter/</div><div class="sp"></div></div><div class="pr" role="img" aria-label="teleprompter in prompter mode, white script text scrolling on black"><span class="hint">esc → library</span><div class="txt"><p class="past">Morning everyone. Quick one today,</p><p class="past">three things. First, we shipped the</p><p class="now">new onboarding flow on Tuesday, and</p><p class="next">activation is already up eleven</p><p class="next">percent. Second, hiring. We have two</p><p class="next">offers out and one more loop next week.</p></div><div class="rl"></div></div></div><p class="note"><b>why this is fine:</b> the strip is in the page flow, not fixed or sticky, so it never floats over app controls (R5). the one surface that needs every pixel is allowed to cover it, and nothing in the strip needs to be reachable mid-read. the prompter's own idle controls have faded out here, as they do after 3s.</p></section>
+</div>
+</body>
+</html>
