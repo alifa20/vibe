@@ -12,7 +12,7 @@
 //   end, so a failed demo build never leaves a partial _site/ behind.
 
 import { execSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadManifest, render404, renderHub, renderProjectPage } from "./hub.mjs";
@@ -24,10 +24,10 @@ const toPosix = (p) => p.split(sep).join(posix.sep);
 
 function htmlFiles(dir) {
   const out = [];
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) out.push(...htmlFiles(p));
-    else if (name.endsWith(".html")) out.push(p);
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...htmlFiles(p));
+    else if (entry.isFile() && entry.name.endsWith(".html")) out.push(p);
   }
   return out.sort();
 }
@@ -63,10 +63,11 @@ export function assemble({ root = resolve(HERE, ".."), outDir, skipBuild = false
         if (!existsSync(src)) throw new Error(`"${p.slug}": demo output ${toPosix(relative(root, src))} not found (build it, or drop --skip-build)`);
         const dest = join(tmp, p.slug);
         cpSync(src, dest, { recursive: true });
+        // Prefer the demo's own favicon; fall back to the hub's at the site root.
         const demoIcon = join(dest, "favicon.svg");
+        const iconTarget = existsSync(demoIcon) ? demoIcon : join(tmp, "favicon.svg");
         for (const file of htmlFiles(dest)) {
-          const iconTarget = existsSync(demoIcon) ? demoIcon : join(tmp, "favicon.svg");
-          const href = toPosix(relative(dirname(file), iconTarget)) || "favicon.svg";
+          const href = toPosix(relative(dirname(file), iconTarget));
           const html = ensureIconLink(injectNav(readFileSync(file, "utf8"), m, p.slug), href.startsWith(".") ? href : `./${href}`);
           writeFileSync(file, html);
           pages.push(toPosix(relative(tmp, file)));

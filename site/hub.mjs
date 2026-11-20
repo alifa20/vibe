@@ -14,10 +14,8 @@
 // Screenshot items: { src, alt, label? }, src relative to the project page (the build copies
 // the files next to it). The screenshot column renders only when the list is non-empty.
 
-import { esc, navStyle, renderNav } from "./nav.mjs";
+import { esc, MONO, navStyle, renderNav, SANS } from "./nav.mjs";
 
-const SANS = '-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif';
-const MONO = 'ui-monospace,"SF Mono",Menlo,Consolas,monospace';
 const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
 const word = (n) => WORDS[n] ?? String(n);
 const num = (i) => String(i + 1).padStart(2, "0");
@@ -353,7 +351,7 @@ export function renderProjectPage(manifest, slug) {
   if (!p.page) throw new Error(`renderProjectPage: project "${slug}" is a live demo and has no project page`);
   const pg = p.page;
   const repo = String(m.repo).replace(/\/+$/, "");
-  const shots = pg.screenshots || [];
+  const shots = pg.screenshots;
 
   const band =
     `<header class="pband"><div>` +

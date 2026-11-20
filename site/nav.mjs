@@ -30,8 +30,8 @@ export const esc = (s) =>
 
 const sha256 = (s) => createHash("sha256").update(s, "utf8").digest("base64");
 
-const SANS = '-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif';
-const MONO = 'ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+export const SANS = '-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif';
+export const MONO = 'ui-monospace,"SF Mono",Menlo,Consolas,monospace';
 
 const find = (manifest, slug) => {
   const i = manifest.projects.findIndex((p) => p.slug === slug);
@@ -137,14 +137,15 @@ export function injectNav(html, manifest, slug) {
   if (!head || !body || body.index < head.index) {
     throw new Error(`injectNav(${slug}): page has no </head> followed by <body>`);
   }
-  const style = `<style>${navStyle(manifest)}</style>`;
+  const css = navStyle(manifest);
+  const style = `<style>${css}</style>`;
   const block =
     renderNav(manifest, slug, { skipTarget: "vibe-skip" }) +
     `<span id="vibe-skip" class="vibe-skip-target" tabindex="-1"></span>`;
   const bodyEnd = body.index + body[0].length;
   const out =
     html.slice(0, head.index) + style + html.slice(head.index, bodyEnd) + block + html.slice(bodyEnd);
-  return patchCsp(out, styleHash(manifest));
+  return patchCsp(out, sha256(css));
 }
 
 const QUOTE_FORMS = ["&#39;", "&#x27;", "&apos;"];
