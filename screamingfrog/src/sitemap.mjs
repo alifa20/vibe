@@ -1,17 +1,19 @@
 // XML sitemaps: urlsets, sitemap index files, and gzip.
 //
-//   decodeSitemapBody(buffer)  -> string  gunzips when the body starts with the gzip magic bytes
+//   decodeSitemapBody(buffer, { maxBodySize }) -> string  gunzips when the body starts with the gzip
+//     magic bytes; throws a RangeError when the gunzipped text would exceed maxBodySize
 //   parseSitemap(xml)          -> { kind: "index" | "urlset" | "unknown", locs: [string] }
-//   loadSitemaps(urls, fetcher, { maxFiles }) -> { files: [{ url, status, error, kind, count }], urls: [string] }
+//   loadSitemaps(urls, fetcher, { maxFiles, maxBodySize }) -> { files: [{ url, status, error, kind, count }], urls: [string] }
 //     fetcher(url) -> { final: { status, body, error } } (fetchFollowing's shape)
 
 import { gunzipSync } from "node:zlib";
 import { load } from "cheerio";
 import { normaliseUrl } from "./url.mjs";
+import { FETCH_DEFAULTS } from "./fetch.mjs";
 
-export function decodeSitemapBody(buf) {
+export function decodeSitemapBody(buf, { maxBodySize = FETCH_DEFAULTS.maxBodySize } = {}) {
   const b = Buffer.isBuffer(buf) ? buf : Buffer.from(buf ?? "");
-  if (b.length >= 2 && b[0] === 0x1f && b[1] === 0x8b) return gunzipSync(b).toString("utf8");
+  if (b.length >= 2 && b[0] === 0x1f && b[1] === 0x8b) return gunzipSync(b, { maxOutputLength: maxBodySize }).toString("utf8");
   return b.toString("utf8");
 }
 
@@ -25,7 +27,7 @@ export function parseSitemap(xml) {
   return { kind, locs };
 }
 
-export async function loadSitemaps(startUrls, fetcher, { maxFiles = 50 } = {}) {
+export async function loadSitemaps(startUrls, fetcher, { maxFiles = 50, maxBodySize = FETCH_DEFAULTS.maxBodySize } = {}) {
   const queue = [...new Set(startUrls)];
   const done = new Set();
   const files = [];
@@ -41,9 +43,12 @@ export async function loadSitemaps(startUrls, fetcher, { maxFiles = 50 } = {}) {
     if (final.status !== 200) continue;
     let parsed;
     try {
-      parsed = parseSitemap(decodeSitemapBody(final.body));
+      parsed = parseSitemap(decodeSitemapBody(final.body, { maxBodySize }));
     } catch (err) {
-      entry.error = `could not read sitemap: ${err.message}`;
+      entry.error =
+        err instanceof RangeError
+          ? `could not read sitemap: gzip expands beyond ${maxBodySize} bytes`
+          : `could not read sitemap: ${err.message}`;
       continue;
     }
     entry.kind = parsed.kind;

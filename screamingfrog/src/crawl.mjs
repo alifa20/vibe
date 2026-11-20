@@ -80,7 +80,7 @@ export async function crawl(startUrl, options = {}) {
   const sitemapStarts = robots.sitemaps.length
     ? robots.sitemaps.map((s) => new URL(s, robotsUrl).href)
     : [origin + "/sitemap.xml"];
-  const sitemaps = await loadSitemaps(sitemapStarts, (u) => polite(() => fetchFollowing(u, http)));
+  const sitemaps = await loadSitemaps(sitemapStarts, (u) => polite(() => fetchFollowing(u, http)), { maxBodySize: o.maxBodySize });
   sitemaps.urls = sitemaps.urls.filter((u) => sameOrigin(u, origin)).map(normaliseUrl);
 
   // breadth-first walk

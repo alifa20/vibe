@@ -2,8 +2,8 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { crawl, pool } from "../src/crawl.mjs";
 import { extract } from "../src/extract.mjs";
-import { retryAfterMs } from "../src/fetch.mjs";
-import { parseSitemap, decodeSitemapBody } from "../src/sitemap.mjs";
+import { retryAfterMs, fetchFollowing, MAX_REDIRECTS } from "../src/fetch.mjs";
+import { parseSitemap, decodeSitemapBody, loadSitemaps } from "../src/sitemap.mjs";
 import { gzipSync } from "node:zlib";
 import { startFixtureSites } from "../fixtures/server.mjs";
 
@@ -181,4 +181,48 @@ test("pool keeps input order and caps concurrency", async () => {
   });
   assert.deepEqual(out, [0, 1, 2, 3]);
   assert.equal(peak, 2);
+});
+
+// A few MB of zeros gzips to a few KB: small enough to pass the received-bytes cap.
+const gzipBomb = () => gzipSync(Buffer.alloc(4 * 1024 * 1024));
+
+test("a gzip sitemap may not expand beyond maxBodySize", async () => {
+  assert.throws(() => decodeSitemapBody(gzipBomb(), { maxBodySize: 64 * 1024 }), RangeError);
+  assert.equal(decodeSitemapBody(gzipSync("<urlset/>"), { maxBodySize: 64 * 1024 }), "<urlset/>");
+  const fetcher = async () => ({ final: { status: 200, body: gzipBomb(), error: null } });
+  const out = await loadSitemaps(["http://e.test/sitemap.xml.gz"], fetcher, { maxBodySize: 64 * 1024 });
+  assert.equal(out.files.length, 1);
+  assert.match(out.files[0].error, /gzip expands beyond 65536 bytes/);
+  assert.deepEqual(out.urls, []);
+});
+
+test("crawl caps gzip sitemap expansion at its maxBodySize", async () => {
+  const bomb = gzipBomb();
+  const fetchImpl = async (url) => {
+    const path = new URL(url).pathname;
+    if (path === "/sitemap.xml") return new Response(bomb, { status: 200, headers: { "content-type": "application/gzip" } });
+    if (path === "/") return new Response("<html><head><title>t</title></head><body></body></html>", { status: 200, headers: { "content-type": "text/html" } });
+    return new Response("nope", { status: 404 });
+  };
+  const result = await crawl("http://e.test/", { fetchImpl, maxBodySize: 64 * 1024, delay: 0, checkExternal: false });
+  assert.equal(result.sitemaps.files.length, 1);
+  assert.match(result.sitemaps.files[0].error, /expands beyond/);
+  assert.equal(result.pages.length, 1);
+});
+
+test("fetchFollowing stops an endless redirect chain at MAX_REDIRECTS", async () => {
+  let n = 0;
+  const fetchImpl = async () => new Response(null, { status: 301, headers: { location: `/r${++n}` } });
+  const res = await fetchFollowing("http://e.test/", { fetchImpl });
+  assert.equal(res.tooManyRedirects, true);
+  assert.equal(res.loop, false);
+  assert.equal(res.hops.length, MAX_REDIRECTS);
+});
+
+test("fetchFollowing reports a malformed Location header", async () => {
+  const fetchImpl = async () => new Response(null, { status: 301, headers: { location: "http://[bad" } });
+  const res = await fetchFollowing("http://e.test/", { fetchImpl });
+  assert.equal(res.final.error, "bad Location header: http://[bad");
+  assert.deepEqual(res.hops, []);
+  assert.equal(res.tooManyRedirects, false);
 });
