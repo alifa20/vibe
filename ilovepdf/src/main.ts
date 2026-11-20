@@ -5,6 +5,7 @@ import { looksLikePdf } from "./ops/sniff.ts";
 import type { Rasterizer } from "./ops/types.ts";
 import type { PdfjsModule, PreviewDoc } from "./render.ts";
 import { h } from "./ui/dom.ts";
+import { invalidate, isCurrent } from "./ui/epoch.ts";
 import { downloadBytes, formatBytes, mimeFor } from "./ui/download.ts";
 import type { PageGrid } from "./ui/thumbnails.ts";
 import { type Engines, type Options, RASTER_PRESETS, type RunResult, TOOLS, type ToolId, type ToolInfo, defaultOptions, runTool } from "./ui/tools.ts";
@@ -30,13 +31,15 @@ interface ToolState {
   grid?: PageGrid;
   gridFor?: number;
   running: boolean;
+  /** Bumped whenever inputs or options change, so a run that started earlier knows its result is stale. */
+  epoch: number;
   progress?: { done: number; total: number };
   result?: RunResult & { before: number; after: number };
   error?: string;
 }
 
 const states = new Map<ToolId, ToolState>(
-  TOOLS.map((t) => [t.id, { files: [], options: defaultOptions(), pages: [], running: false }]),
+  TOOLS.map((t) => [t.id, { files: [], options: defaultOptions(), pages: [], running: false, epoch: 0 }]),
 );
 let current: ToolId = "merge";
 let nextId = 1;
@@ -140,7 +143,7 @@ async function addFiles(list: FileList | File[]): Promise<void> {
     clearGrid(s);
     s.files = [];
   }
-  s.result = undefined;
+  invalidate(s);
   s.error = undefined;
   const items = files.map<FileItem>((f) => ({ id: nextId++, name: f.name, size: f.size, status: "loading" }));
   s.files.push(...items);
@@ -199,7 +202,7 @@ function removeFile(id: number): void {
   const item = s.files.find((f) => f.id === id);
   s.files = s.files.filter((f) => f.id !== id);
   if (s.gridFor === id) clearGrid(s);
-  s.result = undefined;
+  invalidate(s);
   if (item) announce(`${item.name} was removed.`);
   render();
 }
@@ -209,7 +212,7 @@ function moveFile(from: number, to: number): void {
   if (from === to || from < 0 || to < 0) return;
   const [moved] = s.files.splice(from, 1);
   s.files.splice(to, 0, moved);
-  s.result = undefined;
+  invalidate(s);
   render();
 }
 
@@ -247,7 +250,10 @@ async function run(): Promise<void> {
   const tool = info();
   const s = state();
   if (s.running || blockReason(tool, s)) return;
-  const inputs = readyFiles(s).map((f) => ({ name: f.name, bytes: f.bytes!, pageCount: f.pageCount }));
+  const ready = readyFiles(s);
+  const inputs = ready.map((f) => ({ name: f.name, bytes: f.bytes!, pageCount: f.pageCount }));
+  const before = ready.reduce((n, f) => n + f.size, 0);
+  const epoch = s.epoch;
   s.running = true;
   s.error = undefined;
   s.result = undefined;
@@ -257,18 +263,20 @@ async function run(): Promise<void> {
   try {
     const result = await runTool(tool.id, {
       inputs,
-      options: s.options,
+      options: { ...s.options },
       pages: s.pages,
       onProgress: (done, total) => {
         s.progress = { done, total };
         updateProgress();
       },
     }, engines);
-    const before = readyFiles(s).reduce((n, f) => n + f.size, 0);
+    // Inputs or options changed while this ran: the result no longer matches what is on screen.
+    if (!isCurrent(s, epoch)) return;
     const after = result.files.reduce((n, f) => n + f.bytes.length, 0);
     s.result = { ...result, before, after };
     announce(`Done. ${result.files.length === 1 ? result.files[0].name : `${result.files.length} files`} ready to download.`);
   } catch (e) {
+    if (!isCurrent(s, epoch)) return;
     s.error = e instanceof Error ? e.message : String(e);
     announceError(s.error);
   } finally {
@@ -416,7 +424,7 @@ function optionsFor(tool: ToolInfo, s: ToolState): HTMLElement | null {
   const o = s.options;
   const set = <K extends keyof Options>(k: K, v: Options[K], rerender = true) => {
     o[k] = v;
-    s.result = undefined;
+    invalidate(s);
     if (rerender) render();
     else updateRunButton();
   };
@@ -498,9 +506,11 @@ function organiseGrid(s: ToolState): HTMLElement | null {
       .then(async (doc) => {
         if (s.gridFor !== id) return void doc.destroy();
         const { PageGrid } = await import("./ui/thumbnails.ts");
+        // The file may have been swapped while the module loaded.
+        if (s.gridFor !== id) return void doc.destroy();
         s.grid = new PageGrid(doc, (pages) => {
           s.pages = pages;
-          s.result = undefined;
+          invalidate(s);
           render();
         });
         s.pages = s.grid.pages;

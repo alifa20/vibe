@@ -113,16 +113,26 @@ export class PageGrid {
             if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
             li.classList.add("is-dragging");
           }) as EventListener,
-          ondragend: () => li.classList.remove("is-dragging"),
+          ondragend: () => {
+            this.dragFrom = -1;
+            li.classList.remove("is-dragging");
+          },
+          // Only page drags started here are handled; anything else (a desktop file) falls through
+          // to the file drop zone.
           ondragover: ((e: DragEvent) => {
+            if (this.dragFrom < 0) return;
             e.preventDefault();
             li.classList.add("is-drop-target");
           }) as EventListener,
           ondragleave: () => li.classList.remove("is-drop-target"),
           ondrop: ((e: DragEvent) => {
+            if (this.dragFrom < 0) return;
             e.preventDefault();
             e.stopPropagation();
-            this.move(this.dragFrom, i);
+            const from = this.dragFrom;
+            this.dragFrom = -1;
+            li.classList.remove("is-drop-target");
+            this.move(from, i);
           }) as EventListener,
         },
         h("div", { class: `thumb-frame rot-${p.rotate}` }, canvas),
