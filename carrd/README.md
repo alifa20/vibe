@@ -32,7 +32,9 @@ Everything lives in `content.json`.
 | `avatar` | Path to a photo. If the file is missing, a monogram is generated for you at that path. |
 | `social[]` | `{ label, url }`. `mailto:` works. Rendered in order. |
 | `work.projects[]` | `{ title, description, url }`. Omit the whole `work` key to drop the section. |
-| `contact.*` | Section heading, intro, button label, and the thank-you wording. |
+| `contact.endpoint` | Where the form posts, e.g. `/api/contact` for `server.mjs` or the serverless function. The form and its script render only when this is set. |
+| `email` | Optional. With no endpoint, the contact section is just this as a mailto link. With neither, there is no contact section. |
+| `contact.*` | Section heading, intro (`emailIntro` in email-only mode), button label, and the thank-you wording. |
 | `footer` | The right-hand footer line. |
 
 Then:
@@ -74,6 +76,7 @@ warns; set `CHROME_PATH` to point at a browser explicitly.
 ### A VPS (Node + reverse proxy)
 
 The form writes to a file, so this is the setup that needs no third party.
+Set `"endpoint": "/api/contact"` under `contact` in `content.json` first.
 
 ```sh
 git clone <your repo> /srv/site && cd /srv/site
@@ -182,9 +185,9 @@ one `await` in one place, marked with a comment.
 
 ### A static host with no form at all
 
-Deploy `dist/` and delete the contact section from `content.json`, or point
-the form at your email by replacing `action="/api/contact"` with a `mailto:`
-link in the intro. The rest of the page has no server requirement whatsoever.
+Leave `contact.endpoint` unset. With `email` set you get a mailto link; with
+neither, the contact section disappears. The rest of the page has no server
+requirement whatsoever. This is how the GitHub Pages demo is built.
 
 ---
 

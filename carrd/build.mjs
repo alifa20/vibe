@@ -121,7 +121,10 @@ function copyDir(from, to) {
 }
 copyDir(join(ROOT, "assets"), join(OUT, "assets"));
 
-const avatarUrl = "/" + relative(ROOT, avatarSrc).split(/[\\/]/).join("/");
+/* Relative, so the page works from any sub-path (e.g. /vibe/carrd/).
+   Every page sits at the root of dist/, so "./" is right everywhere. */
+const avatarRel = relative(ROOT, avatarSrc).split(/[\\/]/).join("/");
+const avatarUrl = "./" + avatarRel;
 
 /* ── favicon ───────────────────────────────────────────────────── */
 writeFileSync(join(OUT, "favicon.svg"), monogramSvg(64, initials[0], accent, true));
@@ -289,14 +292,16 @@ ${projects.map((p, i) => {
     </section>` : "";
 
 const ct = c.contact || {};
-const contactHtml = `
-    <section class="section wrap" aria-labelledby="contact-label">
-      <h2 class="section__label" id="contact-label">${esc(ct.label || "Contact")}</h2>
-      <div>
-        <p class="contact__heading">${esc(ct.heading || "Say hello")}</p>
+/* The form posts to contact.endpoint and renders only when one is set: a
+   static host has no /api/contact. With only an email, the section is a
+   mailto link; with neither, there is no contact section at all. */
+const endpoint = String(ct.endpoint || "").trim();
+const hasForm = Boolean(endpoint);
+const hasEmail = Boolean(c.email);
+const contactBody = hasForm ? `
         ${ct.intro ? `<p class="contact__intro">${esc(ct.intro)}</p>` : ""}
 
-        <form class="form" id="contact-form" method="post" action="/api/contact">
+        <form class="form" id="contact-form" method="post" action="${esc(endpoint)}">
           <div class="form__row">
             <label class="field">
               <span>Name</span>
@@ -316,7 +321,7 @@ const contactHtml = `
           </div>
           <div class="form__foot">
             <button class="btn" type="submit">${esc(ct.button || "Send message")}</button>
-            <p class="form__note">${c.email ? `Or write to <a href="mailto:${esc(c.email)}">${esc(c.email)}</a>.` : "No third parties involved."}</p>
+            <p class="form__note">${hasEmail ? `Or write to <a href="mailto:${esc(c.email)}">${esc(c.email)}</a>.` : "No third parties involved."}</p>
             <p class="form__error" role="alert"></p>
           </div>
         </form>
@@ -324,9 +329,16 @@ const contactHtml = `
         <div class="thanks" id="contact-thanks" tabindex="-1" role="status" hidden>
           <h3>${esc(ct.successTitle || "Message sent.")}</h3>
           <p>${esc(ct.successBody || "Thank you — I'll be in touch shortly.")}</p>
-        </div>
+        </div>` : `
+        ${ct.emailIntro ? `<p class="contact__intro">${esc(ct.emailIntro)}</p>` : ""}
+        <p class="contact__intro"><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></p>`;
+const contactHtml = (hasForm || hasEmail) ? `
+    <section class="section wrap" aria-labelledby="contact-label">
+      <h2 class="section__label" id="contact-label">${esc(ct.label || "Contact")}</h2>
+      <div>
+        <p class="contact__heading">${esc(ct.heading || "Say hello")}</p>${contactBody}
       </div>
-    </section>`;
+    </section>` : "";
 
 /* ── head ──────────────────────────────────────────────────────── */
 const title = site.title || `${c.name}${c.headline ? " — " + String(c.headline).replace(/\.$/, "") : ""}`;
@@ -337,7 +349,10 @@ const css = readFileSync(join(ROOT, "src", "styles.css"), "utf8") +
 `\n/* from content.json → theme */\n:root{--accent:${accent};--accent-contrast:${onAccent(accent)}}\n` +
 `@media (prefers-color-scheme:dark){:root{--accent:${accentDark};--accent-contrast:${onAccent(accentDark)}}}\n`;
 
-const js = readFileSync(join(ROOT, "src", "app.js"), "utf8");
+// app.js only drives the contact form, so it ships (and is hashed) only with it.
+const js = hasForm ? readFileSync(join(ROOT, "src", "app.js"), "utf8") : "";
+// A form posting off-site needs its origin allowed in form-action/connect-src.
+const endpointOrigin = /^https?:\/\//i.test(endpoint) ? new URL(endpoint).origin : "";
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -345,7 +360,7 @@ const jsonLd = JSON.stringify({
   name: c.name,
   description: description,
   ...(baseUrl ? { url: baseUrl + "/" } : {}),
-  image: abs(avatarUrl),
+  image: abs(avatarRel),
   ...(c.headline ? { jobTitle: String(c.headline).split(/[.,—]/)[0].trim() } : {}),
   sameAs: (c.social || []).map((s) => s.url).filter((u) => /^https?:/i.test(u))
 });
@@ -358,12 +373,12 @@ const cspDirectives = [
   "default-src 'self'",
   "base-uri 'none'",
   "object-src 'none'",
-  "form-action 'self'",
+  `form-action 'self'${endpointOrigin ? " " + endpointOrigin : ""}`,
   "img-src 'self' data:",
   "font-src 'self'",
-  "connect-src 'self'",
+  `connect-src 'self'${endpointOrigin ? " " + endpointOrigin : ""}`,
   `style-src 'sha256-${sha256(css)}'`,
-  `script-src 'sha256-${sha256(js)}' 'sha256-${sha256(jsonLd)}'`
+  `script-src ${js ? `'sha256-${sha256(js)}' ` : ""}'sha256-${sha256(jsonLd)}'`
 ];
 const cspMeta = cspDirectives.join("; ");
 const csp = ["frame-ancestors 'none'", ...cspDirectives].join("; ");
@@ -379,7 +394,7 @@ function head({ pageTitle, robots }) {
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#100f0d" media="(prefers-color-scheme: dark)">
-${robots ? `<meta name="robots" content="${robots}">\n` : ""}${baseUrl ? `<link rel="canonical" href="${esc(baseUrl)}/">\n` : ""}<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+${robots ? `<meta name="robots" content="${robots}">\n` : ""}${baseUrl ? `<link rel="canonical" href="${esc(baseUrl)}/">\n` : ""}<link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${esc(c.name)}">
 <meta property="og:title" content="${esc(pageTitle)}">
@@ -423,8 +438,7 @@ ${head({ pageTitle: title })}
 </head>
 <body>
 ${body}
-<script>${js}</script>
-</body>
+${js ? `<script>${js}</script>\n` : ""}</body>
 </html>
 `;
 writeFileSync(join(OUT, "index.html"), indexHtml);
@@ -442,7 +456,7 @@ ${head({ pageTitle: `${heading} — ${c.name}`, robots: "noindex" })}
     <p>${esc(copy)}</p>
   </div>
   ${extra}
-  <p><a class="backlink" href="/"><span aria-hidden="true">←</span> Back to ${esc(c.name)}</a></p>
+  <p><a class="backlink" href="./"><span aria-hidden="true">←</span> Back to ${esc(c.name)}</a></p>
 </main>
 </body>
 </html>
