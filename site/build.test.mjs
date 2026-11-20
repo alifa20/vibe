@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
 import { assemble } from "./build.mjs";
+import { checkCsp } from "./check-csp.mjs";
 import { loadManifest } from "./hub.mjs";
 import { createServer } from "./serve.mjs";
 
@@ -124,6 +126,28 @@ test("screenshots are copied next to their project page", () => {
   assert.match(readFileSync(join(outDir, "zcal", "index.html"), "utf8"), /src="docs\/booking\.png"/);
 });
 
+test("checkCsp passes the assembled site and names a page with an unhashed inline style", () => {
+  const root = fixtureRoot("csp");
+  const { outDir } = assemble({ root, skipBuild: true, manifest: REAL });
+  assert.deepEqual(checkCsp(outDir), []);
+  const page = join(outDir, "carrd", "thanks.html");
+  writeFileSync(page, readFileSync(page, "utf8").replace("</head>", "<style>main{color:red}</style></head>"));
+  const problems = checkCsp(outDir);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /carrd\/thanks\.html: inline <style>/);
+});
+
+test("checkCsp requires inline scripts to be hashed too, and ignores external ones", () => {
+  const dir = join(TMP, "csp-script");
+  mkdirSync(dir, { recursive: true });
+  const ok = "console.log(1)";
+  const hash = createHash("sha256").update(ok).digest("base64");
+  writeFileSync(join(dir, "a.html"), `<meta http-equiv="Content-Security-Policy" content="default-src &#39;self&#39;; script-src &#39;sha256-${hash}&#39;"><script>${ok}</script><script src="x.js"></script>`);
+  assert.deepEqual(checkCsp(dir), []);
+  writeFileSync(join(dir, "b.html"), `<meta http-equiv="Content-Security-Policy" content="default-src &#39;self&#39;"><script>alert(1)</script>`);
+  assert.match(checkCsp(dir).join("\n"), /b\.html: inline <script>/);
+});
+
 /* ── serve.mjs ── */
 
 async function withServer(siteDir, fn) {
@@ -158,6 +182,13 @@ test("serve: hub, assets, redirects, 404 and no path escape", async () => {
     r = await get("/vibe/zcal");
     assert.equal(r.status, 301);
     assert.equal(r.headers.get("location"), "/vibe/zcal/");
+
+    // A decoded control character must never reach a response header.
+    r = await get("/vibe/x%0A%2F..");
+    assert.ok([301, 404].includes(r.status), `control-character path answered with ${r.status}`);
+    if (r.status === 301) assert.doesNotMatch(r.headers.get("location"), /[\r\n]/);
+    r = await get("/vibe/");
+    assert.equal(r.status, 200, "server still up after the control-character request");
 
     r = await get("/vibe/nope");
     assert.equal(r.status, 404);

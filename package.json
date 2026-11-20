@@ -9,6 +9,7 @@
   "scripts": {
     "site:build": "node site/build.mjs",
     "site:serve": "node site/serve.mjs",
-    "site:test": "node --test 'site/*.test.mjs'"
+    "site:test": "node --test 'site/*.test.mjs'",
+    "site:check": "node site/check-csp.mjs"
   }
 }

@@ -170,12 +170,13 @@ test("injectNav patches CSP with the hash of the injected style", () => {
   assert.ok(out.includes(`&#39;sha256-A&#39; &#39;sha256-${b64sha(injected)}&#39;`));
 });
 
-test("real carrd page: injected nav style is allowed by its CSP", () => {
+test("real carrd page: injected nav style is allowed by its CSP", (t) => {
   let page;
   try {
     page = readFileSync(new URL("../carrd/dist/index.html", import.meta.url), "utf8");
   } catch {
-    return; // carrd not built in this checkout
+    t.skip("carrd/dist not built; CI checks the assembled site with site/check-csp.mjs");
+    return;
   }
   const out = injectNav(page, m, "carrd");
   const csp = out.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1].replace(/&#39;/g, "'");
@@ -194,4 +195,10 @@ test("ensureIconLink adds a relative icon only when missing", () => {
   const hasShortcut = MINIMAL.replace("</head>", "<link rel='shortcut icon' href='x.ico'></head>");
   assert.equal(ensureIconLink(hasShortcut), hasShortcut);
   assert.match(ensureIconLink(MINIMAL, "../favicon.svg"), /href="\.\.\/favicon\.svg"/);
+});
+
+test("nav style hides the strip while the teleprompter's full-screen prompter is mounted (R5)", () => {
+  // Descendants too: the strip's reset sets visibility:visible on every child,
+  // which would otherwise override the inherited hidden.
+  assert.match(navStyle(m), /body:has\(\.prompter\) \.vibe-nav,body:has\(\.prompter\) \.vibe-nav \*,body:has\(\.prompter\) \.vibe-skip\{visibility:hidden\}/);
 });

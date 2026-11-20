@@ -384,7 +384,7 @@ const cspMeta = cspDirectives.join("; ");
 const csp = ["frame-ancestors 'none'", ...cspDirectives].join("; ");
 
 
-function head({ pageTitle, robots }) {
+function head({ pageTitle, robots, icon = "./favicon.svg" }) {
   return `<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="${esc(cspMeta)}">
@@ -394,7 +394,7 @@ function head({ pageTitle, robots }) {
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#100f0d" media="(prefers-color-scheme: dark)">
-${robots ? `<meta name="robots" content="${robots}">\n` : ""}${baseUrl ? `<link rel="canonical" href="${esc(baseUrl)}/">\n` : ""}<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+${robots ? `<meta name="robots" content="${robots}">\n` : ""}${baseUrl ? `<link rel="canonical" href="${esc(baseUrl)}/">\n` : ""}<link rel="icon" href="${esc(icon)}" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${esc(c.name)}">
 <meta property="og:title" content="${esc(pageTitle)}">
@@ -444,10 +444,10 @@ ${js ? `<script>${js}</script>\n` : ""}</body>
 writeFileSync(join(OUT, "index.html"), indexHtml);
 
 /* ── thanks.html (no-JS fallback target) ───────────────────────── */
-const standalone = (heading, copy, extra = "") => `<!doctype html>
+const standalone = (heading, copy, extra = "", { home = "./", icon } = {}) => `<!doctype html>
 <html lang="${esc(site.lang || "en")}">
 <head>
-${head({ pageTitle: `${heading} — ${c.name}`, robots: "noindex" })}
+${head({ pageTitle: `${heading} — ${c.name}`, robots: "noindex", icon })}
 </head>
 <body>
 <main class="standalone wrap">
@@ -456,7 +456,7 @@ ${head({ pageTitle: `${heading} — ${c.name}`, robots: "noindex" })}
     <p>${esc(copy)}</p>
   </div>
   ${extra}
-  <p><a class="backlink" href="./"><span aria-hidden="true">←</span> Back to ${esc(c.name)}</a></p>
+  <p><a class="backlink" href="${esc(home)}"><span aria-hidden="true">←</span> Back to ${esc(c.name)}</a></p>
 </main>
 </body>
 </html>
@@ -465,7 +465,9 @@ ${head({ pageTitle: `${heading} — ${c.name}`, robots: "noindex" })}
 writeFileSync(join(OUT, "thanks.html"),
   standalone(ct.successTitle || "Message sent.", ct.successBody || "Thank you — I'll be in touch shortly."));
 writeFileSync(join(OUT, "404.html"),
-  standalone("Not found.", "That page doesn't exist — which is easy here, because there is only one."));
+  // Hosts serve 404.html at whatever URL was missing, so its links can't be relative.
+  standalone("Not found.", "That page doesn't exist — which is easy here, because there is only one.", "",
+    { home: abs(""), icon: abs("favicon.svg") }));
 
 /* ── headers for hosts that can set them ───────────────────────── */
 const securityHeaders = {

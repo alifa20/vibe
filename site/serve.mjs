@@ -62,7 +62,7 @@ export function createServer({ siteDir = resolve(HERE, "..", "_site"), basePath 
     let target = file;
     if (statSync(file).isDirectory()) {
       if (!path.endsWith("/")) {
-        res.writeHead(301, { location: `${path}/${url.search}` });
+        res.writeHead(301, { location: `${url.pathname}/${url.search}` });
         return res.end();
       }
       target = join(file, "index.html");
@@ -80,5 +80,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     console.error("✗ _site/ is empty. Run `npm run site:build` first.");
     process.exit(1);
   }
-  createServer({ siteDir }).listen(port, () => console.log(`vibe preview: http://localhost:${port}/vibe/`));
+  createServer({ siteDir }).listen(port, "127.0.0.1", () => console.log(`vibe preview: http://localhost:${port}/vibe/`));
 }

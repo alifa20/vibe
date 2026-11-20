@@ -9,11 +9,13 @@ on:
 permissions:
   contents: read
 
-# One queue for Pages. A queued run is replaced by a newer one, but a deploy
-# that has started always finishes.
+# Deploys (pushes to main, manual runs) share one queue: a queued deploy is
+# replaced by a newer one, but a deploy that has started always finishes.
+# Pull requests get their own group per PR so they can never cancel a pending
+# deploy, and a newer push to the same PR cancels its older check run.
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('pages-pr-{0}', github.ref) || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -36,6 +38,9 @@ jobs:
 
       - name: Build demos and assemble _site/
         run: node site/build.mjs
+
+      - name: Check every inline style and script is allowed by its CSP
+        run: node site/check-csp.mjs
 
       - uses: actions/configure-pages@v5
         if: github.event_name != 'pull_request'

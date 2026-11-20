@@ -80,6 +80,7 @@ ${colours}
 .vibe-skip{position:absolute;top:6px;left:-10000px;z-index:1001;display:inline-flex;align-items:center;min-height:44px;padding:0 16px;background:#121212;color:#ffd23f;border:2px solid #ffd23f;border-radius:999px;font:800 15px/1 ${SANS};text-decoration:none;white-space:nowrap}
 .vibe-skip:focus{left:8px;outline:3px dashed #121212;outline-offset:2px}
 .vibe-skip-target{display:block;height:0;overflow:hidden;outline:none}
+body:has(.prompter) .vibe-nav,body:has(.prompter) .vibe-nav *,body:has(.prompter) .vibe-skip{visibility:hidden}
 @media (max-width:599.98px){.vibe-nav .vibe-crumb,.vibe-nav .vibe-lbl{display:none}.vibe-nav .vibe-nm{max-width:none}.vibe-nav .vibe-menu{left:8px;right:8px;width:auto}}
 @media (prefers-reduced-motion:reduce){.vibe-nav a,.vibe-nav .vibe-sum,.vibe-nav a:hover,.vibe-nav a:active,.vibe-nav .vibe-sum:hover,.vibe-nav .vibe-details[open] .vibe-sum{transform:none;transition:box-shadow .12s}}
 `;

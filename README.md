@@ -35,6 +35,7 @@ two live demos with a shared nav strip injected on top.
 ```sh
 npm run site:test    # node:test suite for the build, nav and preview server
 npm run site:build   # builds both demos from source and assembles _site/
+npm run site:check   # checks every inline style/script in _site/ is allowed by its CSP
 npm run site:serve   # previews _site/ at http://localhost:4173/vibe/
 ```
 
