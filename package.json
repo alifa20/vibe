@@ -1,7 +1,7 @@
 {
   "name": "vibe",
   "private": true,
-  "description": "Eight small apps built with AI, plus the GitHub Pages hub that links them.",
+  "description": "Thirteen small apps built with AI, plus the GitHub Pages hub that links them.",
   "type": "module",
   "engines": {
     "node": ">=22"

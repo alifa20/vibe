@@ -182,6 +182,114 @@
       }
     },
     {
+      "slug": "ilovepdf",
+      "name": "pdf-tools",
+      "inspiredBy": "iLovePDF",
+      "description": "merge, split, organise, convert and compress pdfs. nothing leaves your browser.",
+      "stack": "vite + ts + pdf-lib + pdf.js + qpdf wasm",
+      "color": "#ff6f91",
+      "demo": { "build": "pnpm build --base=./", "out": "dist" }
+    },
+    {
+      "slug": "screamingfrog",
+      "name": "sitecrawl",
+      "inspiredBy": "Screaming Frog",
+      "description": "seo crawler for one site. broken links, redirects, titles, canonicals and sitemap gaps in one html report.",
+      "stack": "node cli + cheerio",
+      "color": "#c7a27c",
+      "demo": { "build": "node scripts/sample-report.mjs", "out": "sample" }
+    },
+    {
+      "slug": "plausible",
+      "name": "analytics",
+      "inspiredBy": "Plausible",
+      "description": "cookie-free web analytics. one script tag, pageviews in a sqlite file you own.",
+      "stack": "express + sqlite",
+      "color": "#7dd87a",
+      "page": {
+        "pitch": "add one script tag to your site and read pageviews, referrers and devices on a dashboard you host.",
+        "features": [
+          {
+            "title": "no cookies, nothing stored on the visitor's device",
+            "detail": "a daily salt that is deleted at midnight hashes each visitor"
+          },
+          { "title": "spa-aware tracker", "detail": "pushState route changes count, sent as a plain-text beacon" },
+          { "title": "bots and opt-outs skipped", "detail": "known bots, headless browsers and global privacy control" },
+          {
+            "title": "password-protected dashboard",
+            "detail": "daily chart, top pages, referrers, utm, browsers and devices"
+          }
+        ],
+        "run": {
+          "commands": [
+            { "comment": "from your clone of alifa20/vibe", "cmd": "cd plausible" },
+            { "cmd": "pnpm install" },
+            { "comment": "then set ADMIN_PASSWORD", "cmd": "cp .env.example .env" },
+            { "comment": "→ http://127.0.0.1:8000", "cmd": "pnpm start" }
+          ],
+          "note": "needs node 22+. it can't live on github pages because every pageview is posted to the server and stored in its sqlite file."
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "slug": "invoiceninja",
+      "name": "invoices",
+      "inspiredBy": "Invoice Ninja",
+      "description": "clients, line items and invoices with exact money and gap-free numbers. prints to pdf.",
+      "stack": "express + sqlite",
+      "color": "#f2c14e",
+      "page": {
+        "pitch": "write an invoice from line items, mark it sent, print it to pdf, and see what's still owed.",
+        "features": [
+          { "title": "exact money", "detail": "integer minor units, tax once per rate, per-currency totals" },
+          { "title": "gap-free numbers", "detail": "INV-2026-0001, assigned on send, one sequence per year" },
+          { "title": "frozen once sent", "detail": "sqlite triggers refuse edits; corrections are a void" },
+          { "title": "print to pdf", "detail": "a4 or letter print styles, no pdf library" }
+        ],
+        "run": {
+          "commands": [
+            { "comment": "from your clone of alifa20/vibe", "cmd": "cd invoiceninja" },
+            { "cmd": "pnpm install" },
+            { "comment": "then set ADMIN_PASSWORD", "cmd": "cp .env.example .env" },
+            { "comment": "→ http://127.0.0.1:3000", "cmd": "pnpm start" }
+          ],
+          "note": "needs node 22.9+. it can't live on github pages because clients and invoices are stored by the server in sqlite."
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "slug": "betterstack",
+      "name": "uptime",
+      "inspiredBy": "Better Stack",
+      "description": "uptime and cron monitoring: http checks, heartbeats, tls expiry warnings, email alerts.",
+      "stack": "express + sqlite",
+      "color": "#e8e3d0",
+      "page": {
+        "pitch": "watch your sites and cron jobs, and get one email when something goes down and one when it's back.",
+        "features": [
+          { "title": "http monitors", "detail": "interval, timeout, expected codes, n failures before down" },
+          {
+            "title": "heartbeats for cron jobs",
+            "detail": "a secret ping url, fixed period or cron with a timezone, plus grace"
+          },
+          { "title": "tls expiry warnings", "detail": "one email each at 14, 7 and 1 days left" },
+          { "title": "a status dashboard", "detail": "24h uptime, latency sparklines, recent incidents" }
+        ],
+        "run": {
+          "commands": [
+            { "comment": "from your clone of alifa20/vibe", "cmd": "cd betterstack" },
+            { "cmd": "pnpm install" },
+            { "comment": "then set ADMIN_PASSWORD (and SMTP_* for email)", "cmd": "cp .env.example .env" },
+            { "comment": "→ http://127.0.0.1:3000", "cmd": "pnpm start" }
+          ],
+          "note": "needs node 22+. it can't live on github pages because the checks run on a server around the clock and the history sits in a sqlite file."
+        },
+        "screenshots": []
+      }
+    },
+    {
       "slug": "myshot",
       "name": "myshot",
       "description": "screenshot beautifier: padding, shadow, background, crop and arrows, exported as a png.",
