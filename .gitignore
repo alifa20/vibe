@@ -159,3 +159,7 @@ Thumbs.db
 # Test artifacts
 playwright-report/
 test-results/
+
+# GitHub Pages artifact (site/build.mjs)
+_site/
+_site.tmp/

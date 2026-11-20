@@ -1,0 +1,14 @@
+{
+  "name": "vibe",
+  "private": true,
+  "description": "Eight small apps built with AI, plus the GitHub Pages hub that links them.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "site:build": "node site/build.mjs",
+    "site:serve": "node site/serve.mjs",
+    "site:test": "node --test 'site/*.test.mjs'"
+  }
+}
