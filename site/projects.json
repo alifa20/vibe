@@ -1,0 +1,185 @@
+{
+  "basePath": "/vibe/",
+  "repo": "https://github.com/alifa20/vibe",
+  "projects": [
+    {
+      "slug": "teleprompter",
+      "name": "teleprompter",
+      "description": "a local, single-page teleprompter. scripts stay in your browser.",
+      "stack": "vite + react + ts",
+      "color": "#ff5247",
+      "demo": { "build": "npm run build -- --base=./", "out": "dist" }
+    },
+    {
+      "slug": "carrd",
+      "name": "personal-site",
+      "inspiredBy": "Carrd",
+      "description": "one-page personal site. content.json is the whole cms.",
+      "stack": "node build → static html",
+      "color": "#4ce0b3",
+      "demo": { "build": "node build.mjs", "out": "dist" }
+    },
+    {
+      "slug": "bitly",
+      "name": "golinks",
+      "inspiredBy": "Bitly",
+      "description": "link shortener with click analytics and qr codes on your own domain.",
+      "stack": "cloudflare workers + kv + d1",
+      "color": "#4d86ff",
+      "page": {
+        "pitch": "short links on your own domain, with click analytics and a qr code for every link.",
+        "features": [
+          { "title": "one kv read per redirect", "detail": "the click lands in d1 after the 302 has gone" },
+          { "title": "a qr code per link", "detail": "png at print sizes, cached at the edge" },
+          { "title": "password-protected admin", "detail": "clicks per day, countries, devices, referrers" },
+          { "title": "expiry and click caps", "detail": "plus a json api for scripts" }
+        ],
+        "run": {
+          "commands": [
+            { "comment": "from your clone of alifa20/vibe", "cmd": "cd bitly" },
+            { "cmd": "npm install" },
+            { "comment": "then set a local ADMIN_PASSWORD", "cmd": "cp .dev.vars.example .dev.vars" },
+            { "comment": "local kv + d1, once", "cmd": "npm run db:init:local" },
+            { "comment": "→ http://127.0.0.1:8787", "cmd": "npm run dev" }
+          ],
+          "note": "needs node and wrangler; deploying needs a cloudflare account. it can't live on github pages because every redirect runs on a worker and the clicks sit in d1."
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "slug": "linktree",
+      "name": "linkinbio",
+      "inspiredBy": "Linktree",
+      "description": "link-in-bio page with first-party click tracking. zero dependencies.",
+      "stack": "node, no deps",
+      "color": "#ff8fcf",
+      "page": {
+        "pitch": "one page, one json file, and click tracking that never leaves your server.",
+        "features": [
+          { "title": "links.json is the cms", "detail": "edit the file, the page updates on the next request" },
+          { "title": "first-party click tracking", "detail": "one tab-separated line per click, no cookies" },
+          { "title": "/stats behind basic auth", "detail": "clicks per link and per day, referrers, bots split out" },
+          { "title": "zero dependencies", "detail": "node stdlib only, nothing to npm install" }
+        ],
+        "run": {
+          "commands": [
+            { "comment": "from your clone of alifa20/vibe", "cmd": "cd linktree" },
+            { "comment": "then set STATS_USER, STATS_PASS and HASH_SALT", "cmd": "cp .env.example .env" },
+            { "comment": "og.png, favicon, avatar placeholder", "cmd": "npm run build" },
+            { "comment": "→ http://127.0.0.1:8787", "cmd": "npm start" }
+          ],
+          "note": "needs node 20.6+. it can't live on github pages because every click goes through the server's /go/ redirect and lands in its log."
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "slug": "qr",
+      "name": "qrforge",
+      "description": "qr generator with editable dynamic codes and scan tracking.",
+      "stack": "express + sqlite",
+      "color": "#a07bff",
+      "page": {
+        "pitch": "design a qr code, print it, and change where it points later.",
+        "features": [
+          { "title": "live generator", "detail": "colours, dot styles, a centre logo, png or svg export" },
+          { "title": "dynamic codes", "detail": "/r/<slug> redirects to a target you can edit" },
+          { "title": "scan tracking", "detail": "totals, the last 30 days, the latest hits" },
+          { "title": "no third-party calls", "detail": "one node process, one sqlite file" }
+        ],
+        "run": {
+          "commands": [
+            { "comment": "from your clone of alifa20/vibe", "cmd": "cd qr" },
+            { "cmd": "npm install" },
+            { "comment": "then set ADMIN_USER / ADMIN_PASS", "cmd": "cp .env.example .env" },
+            { "comment": "→ http://localhost:3000", "cmd": "npm start" }
+          ],
+          "note": "needs node 22+. it can't live on github pages because dynamic codes redirect through the server and the scans sit in a sqlite file."
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "slug": "senja",
+      "name": "senja",
+      "inspiredBy": "Senja",
+      "description": "collect, approve and embed testimonials.",
+      "stack": "express + sqlite",
+      "color": "#c8f03c",
+      "page": {
+        "pitch": "a public form collects testimonials, you approve them, and a wall or one script tag shows them.",
+        "features": [
+          { "title": "collection form", "detail": "name, role, rating, text, avatar" },
+          { "title": "nothing shows until approved", "detail": "moderate in /admin behind basic auth" },
+          { "title": "a hosted wall", "detail": "masonry wall of approved testimonials" },
+          { "title": "one-tag embed", "detail": "real dom, picks up your site's fonts" }
+        ],
+        "run": {
+          "commands": [
+            { "comment": "from your clone of alifa20/vibe", "cmd": "cd senja" },
+            { "cmd": "npm install" },
+            { "comment": "then set ADMIN_PASSWORD", "cmd": "cp .env.example .env" },
+            { "comment": "optional: six sample testimonials", "cmd": "npm run seed" },
+            { "comment": "→ http://localhost:3000", "cmd": "npm start" }
+          ],
+          "note": "needs node 20.11+. it can't live on github pages because submissions and avatars are stored by the server, in sqlite and on disk."
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "slug": "tally",
+      "name": "forms",
+      "inspiredBy": "Tally",
+      "description": "a small form builder. responses stay in a sqlite file you control.",
+      "stack": "express + sqlite",
+      "color": "#ff9f2e",
+      "page": {
+        "pitch": "build a form, share the link, read the responses, export a csv.",
+        "features": [
+          { "title": "form builder", "detail": "add and reorder fields in /admin" },
+          { "title": "a public form per link", "detail": "validated in the browser and again on the server" },
+          { "title": "responses and csv export", "detail": "file uploads and optional email alerts" },
+          { "title": "nothing from other origins", "detail": "a content-security-policy header enforces it" }
+        ],
+        "run": {
+          "commands": [
+            { "comment": "from your clone of alifa20/vibe", "cmd": "cd tally" },
+            { "cmd": "npm install" },
+            { "comment": "then set ADMIN_TOKEN and BASE_URL", "cmd": "cp .env.example .env" },
+            { "comment": "→ http://127.0.0.1:3000/admin", "cmd": "npm start" }
+          ],
+          "note": "needs node 20+. it can't live on github pages because responses and uploads are written to the server's disk."
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "slug": "zcal",
+      "name": "zcal",
+      "inspiredBy": "Zcal",
+      "description": "single-user scheduling: read one calendar, publish your free time, book a slot.",
+      "stack": "next.js + sqlite",
+      "color": "#5cd2ff",
+      "page": {
+        "pitch": "single-user scheduling: read one calendar, publish your free time, someone books a slot.",
+        "features": [
+          { "title": "one calendar", "detail": "busy blocks, .ics import and export" },
+          { "title": "booking links", "detail": "length, buffers, notice, how far ahead" },
+          { "title": "visitors see free times only", "detail": "never your event titles" },
+          { "title": "booked = written back", "detail": "plus a .ics and a one-time cancel link" }
+        ],
+        "run": {
+          "commands": [
+            { "comment": "from your clone of alifa20/vibe", "cmd": "cd zcal" },
+            { "comment": "deps + .env + sample data", "cmd": "npm run bootstrap" },
+            { "comment": "→ http://localhost:3000", "cmd": "npm run dev" }
+          ],
+          "note": "needs node 20.9+. `bootstrap` prints a passphrase: that's your login. it can't live on github pages because your bookings sit in a sqlite file."
+        },
+        "screenshots": []
+      }
+    }
+  ]
+}
