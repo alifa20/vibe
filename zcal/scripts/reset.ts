@@ -14,7 +14,7 @@ if (dropFile) {
   for (const suffix of ["", "-wal", "-shm"]) {
     fs.rmSync(`${file}${suffix}`, { force: true });
   }
-  console.log(`Deleted ${file} and its journal files. Run \`npm run db:migrate\` to start again.`);
+  console.log(`Deleted ${file} and its journal files. Run \`pnpm db:migrate\` to start again.`);
   process.exit(0);
 }
 

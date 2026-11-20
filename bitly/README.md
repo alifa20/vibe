@@ -42,9 +42,9 @@ point at Cloudflare.
 ### 1. Install and sign in
 
 ```sh
-npm install
-npx wrangler login
-npx wrangler telemetry disable   # optional: stops wrangler's own usage reporting
+pnpm install
+pnpm wrangler login
+pnpm wrangler telemetry disable   # optional: stops wrangler's own usage reporting
 ```
 
 ### 2. Create the KV namespace
@@ -52,7 +52,7 @@ npx wrangler telemetry disable   # optional: stops wrangler's own usage reportin
 KV is the slug lookup the redirect path reads. One read per click.
 
 ```sh
-npx wrangler kv namespace create LINKS
+pnpm wrangler kv namespace create LINKS
 ```
 
 It prints an `id`. Put it in `wrangler.toml`:
@@ -68,7 +68,7 @@ id = "the-id-it-printed"
 D1 is the click log and the authority on which slugs exist.
 
 ```sh
-npx wrangler d1 create golinks
+pnpm wrangler d1 create golinks
 ```
 
 Put the `database_id` it prints into `wrangler.toml`, then create the tables —
@@ -76,8 +76,8 @@ once for the deployed database, and once for the local one used by
 `wrangler dev`:
 
 ```sh
-npm run db:init         # --remote, the real database
-npm run db:init:local   # the local copy for development
+pnpm db:init        # --remote, the real database
+pnpm db:init:local  # the local copy for development
 ```
 
 ### 4. Set your domain and fallback
@@ -99,7 +99,7 @@ FALLBACK_URL = "https://mydomain.com/" # where expired and capped links go
 Secrets never go in `wrangler.toml`. This is the only one:
 
 ```sh
-npx wrangler secret put ADMIN_PASSWORD
+pnpm wrangler secret put ADMIN_PASSWORD
 ```
 
 The same value is the API bearer token. Changing it signs out every open admin
@@ -108,7 +108,7 @@ session, because it is also the key the session cookie is signed with.
 ### 6. Deploy
 
 ```sh
-npm run deploy
+pnpm run deploy
 ```
 
 ### 7. The DNS record
@@ -251,9 +251,9 @@ day, not how many clicks you serve.
 ## Local development
 
 ```sh
-cp .dev.vars.example .dev.vars    # set a local ADMIN_PASSWORD
-npm run db:init:local             # once
-npm run dev                       # http://127.0.0.1:8787
+cp .dev.vars.example .dev.vars  # set a local ADMIN_PASSWORD
+pnpm db:init:local              # once
+pnpm dev                        # http://127.0.0.1:8787
 ```
 
 `.dev.vars` is gitignored and never deployed. Local KV and D1 are stored under
@@ -264,7 +264,7 @@ npm run dev                       # http://127.0.0.1:8787
 The click log and the link table are both in D1:
 
 ```sh
-npx wrangler d1 export golinks --remote --output=golinks-backup.sql
+pnpm wrangler d1 export golinks --remote --output=golinks-backup.sql
 ```
 
 Keep the export somewhere outside Cloudflare. It is what lets you rebuild every

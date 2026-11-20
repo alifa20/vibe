@@ -140,8 +140,8 @@ test("project page renders features, run commands and the source link", () => {
   for (const t of ["one calendar", "booking links", "visitors see free times only", "booked = written back"]) {
     assert.ok(html.includes(t), t);
   }
-  assert.match(html, /npm run bootstrap/);
-  assert.match(html, /npm run dev/);
+  assert.match(html, /pnpm bootstrap/);
+  assert.match(html, /pnpm dev/);
   assert.match(html, /href="https:\/\/github\.com\/alifa20\/vibe\/tree\/main\/zcal"/);
   assert.match(html, /source on github/);
   assert.match(html, /needs a server/);
@@ -164,7 +164,7 @@ test("copy button is hidden without JS; script copies without comment lines", ()
   const html = renderProjectPage(real(), "zcal");
   assert.match(html, /<button[^>]*class="copy"[^>]*hidden/);
   const cmds = [...html.matchAll(/<span class="cmd">([^<]*)<\/span>/g)].map((x) => x[1]);
-  assert.deepEqual(cmds, ["cd zcal", "npm run bootstrap", "npm run dev"]);
+  assert.deepEqual(cmds, ["cd zcal", "pnpm bootstrap", "pnpm dev"]);
   assert.match(html, /querySelectorAll\("\.cmd"\)/);
   assert.match(html, /copied ✓/);
 });

@@ -6,7 +6,7 @@ import path from "node:path";
  * the unit test runner. Inside the Next.js app this is a no-op, because Next
  * has already populated process.env by the time any of this runs.
  *
- * Existing environment variables always win, so `ZCAL_DATABASE_PATH=... npm test`
+ * Existing environment variables always win, so `ZCAL_DATABASE_PATH=... pnpm test`
  * still overrides the file.
  */
 let loaded = false;

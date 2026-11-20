@@ -24,12 +24,12 @@ for common platforms; if none matches yours it compiles on install, which needs 
 ## Run it locally
 
 ```bash
-npm install
-cp .env.example .env      # then set ADMIN_USER / ADMIN_PASS
-npm start                 # http://localhost:3000
+pnpm install
+cp .env.example .env  # then set ADMIN_USER / ADMIN_PASS
+pnpm start            # http://localhost:3000
 ```
 
-`npm run dev` restarts on file changes.
+`pnpm dev` restarts on file changes.
 
 ## Configuration
 
@@ -66,11 +66,12 @@ Assumes Debian/Ubuntu, a domain pointed at the box, and a reverse proxy terminat
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs git
+sudo corepack enable  # provides pnpm, pinned by packageManager
 
 sudo adduser --system --group --home /srv/qrforge qrforge
 sudo -u qrforge git clone <your-repo> /srv/qrforge/app
 cd /srv/qrforge/app
-sudo -u qrforge npm ci --omit=dev
+sudo -u qrforge pnpm install --frozen-lockfile --prod
 ```
 
 ### 2. Configure
@@ -197,7 +198,7 @@ a plain `cp` of just `qr.db` may not.
 ```bash
 cd /srv/qrforge/app
 sudo -u qrforge git pull
-sudo -u qrforge npm ci --omit=dev
+sudo -u qrforge pnpm install --frozen-lockfile --prod
 sudo systemctl restart qrforge
 ```
 

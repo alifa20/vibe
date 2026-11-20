@@ -123,7 +123,7 @@ const chrome = findChrome();
 if (!chrome) {
   console.warn(
     '\n  ! No Chrome/Chromium found, so og.png and apple-touch-icon.png were skipped.\n' +
-    '    Install one, or point CHROME_PATH at it, then run `npm run og`.\n' +
+    '    Install one, or point CHROME_PATH at it, then run `pnpm og`.\n' +
     '    On Debian/Ubuntu: sudo apt install -y chromium\n'
   );
 } else {
@@ -141,7 +141,7 @@ if (!ogOnly) {
   writeFileSync(
     join(DIST, 'headers.txt'),
     `# Content-Security-Policy for dist/index.html.\n` +
-    `# Regenerate with \`npm run build\` whenever links.json changes — the hash covers the inline <style>.\n\n` +
+    `# Regenerate with \`pnpm build\` whenever links.json changes — the hash covers the inline <style>.\n\n` +
     `Content-Security-Policy: default-src 'none'; img-src 'self' data: https:; style-src '${page.styleHash}'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n`
   );
   console.log('  write   dist/index.html          static copy');

@@ -29,7 +29,7 @@ links.example.com {
 
 # ---------------------------------------------------------------------------
 # Serving the static copy instead (dist/index.html), with only /go and /stats
-# proxied. Slightly faster, but you must run `npm run build` after every
+# proxied. Slightly faster, but you must run `pnpm build` after every
 # links.json edit. Use this block *instead of* the one above.
 # ---------------------------------------------------------------------------
 # links.example.com {

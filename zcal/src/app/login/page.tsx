@@ -44,7 +44,7 @@ export default async function LoginPage() {
                 ))}
               </ul>
               <p style={{ marginTop: "0.5rem" }}>
-                Run <span className="mono">npm run setup</span>, or edit{" "}
+                Run <span className="mono">pnpm run setup</span>, or edit{" "}
                 <span className="mono">.env</span> and restart the server.
               </p>
             </Notice>

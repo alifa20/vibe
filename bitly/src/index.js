@@ -75,7 +75,7 @@ async function handleRedirect (request, env, ctx, url) {
 // --------------------------------------------------------------------- api
 
 async function assertApiAuth (request, env) {
-  if (!env.ADMIN_PASSWORD) throw new HttpError(503, 'ADMIN_PASSWORD is not set. Run: npx wrangler secret put ADMIN_PASSWORD')
+  if (!env.ADMIN_PASSWORD) throw new HttpError(503, 'ADMIN_PASSWORD is not set. Run: pnpm wrangler secret put ADMIN_PASSWORD')
   const header = request.headers.get('authorization') || ''
   const token = header.startsWith('Bearer ') ? header.slice(7) : ''
   const ok = timingSafeEqual(await sha256Hex(token), await sha256Hex(env.ADMIN_PASSWORD))

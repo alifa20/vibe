@@ -7,16 +7,16 @@ no accounts, no telemetry and no external API calls. Scripts and settings live i
 ## Getting started
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Then open the URL Vite prints (http://localhost:5173 by default).
 
 ```bash
-npm run build     # type check and produce a production bundle in dist/
-npm run preview   # serve the production bundle locally
-npm run lint      # oxlint
+pnpm build    # type check and produce a production bundle in dist/
+pnpm preview  # serve the production bundle locally
+pnpm lint     # oxlint
 ```
 
 There is no `.env` file and nothing to configure: the app has no secrets and talks
@@ -120,7 +120,7 @@ Storage keys: `teleprompter.scripts.v1` and `teleprompter.settings.v1`.
 ## Camera and microphone need a secure context
 
 `getUserMedia`, `MediaRecorder` and `SpeechRecognition` only work on a secure
-origin. `http://localhost` counts as one, so `npm run dev` is fine. If you serve
+origin. `http://localhost` counts as one, so `pnpm dev` is fine. If you serve
 the built app from another host — a LAN address, a NAS, another machine's IP — the
 browser will refuse those APIs until it is behind HTTPS. Scrolling, scripts and
 every keyboard shortcut work regardless.

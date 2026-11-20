@@ -19,5 +19,11 @@
     "express": "^5.1.0",
     "multer": "^2.0.2",
     "nodemailer": "^9.1.0"
+  },
+  "packageManager": "pnpm@10.6.5",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }

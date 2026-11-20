@@ -34,8 +34,8 @@ Requires **Node.js 20.9 or newer** (developed and tested on Node 24). Nothing el
 no database server, no cloud account.
 
 ```bash
-npm run bootstrap     # installs dependencies, writes .env, migrates, adds sample data
-npm run dev           # http://localhost:3000
+pnpm bootstrap  # installs dependencies, writes .env, migrates, adds sample data
+pnpm dev        # http://localhost:3000
 ```
 
 `bootstrap` prints a generated passphrase. That is your login. It is stored in `.env`, which is
@@ -44,24 +44,24 @@ gitignored, and you can change it there at any time.
 If you prefer to do it in steps:
 
 ```bash
-npm install
+pnpm install
 cp .env.example .env    # then edit it — see the comments in the file
-npm run db:migrate
-npm run db:seed         # optional: adds clearly-labelled sample data
-npm run dev
+pnpm db:migrate
+pnpm db:seed         # optional: adds clearly-labelled sample data
+pnpm dev
 ```
 
 ### Production-style local run
 
 ```bash
-npm run serve           # builds, then serves the optimised build on :3000
+pnpm serve           # builds, then serves the optimised build on :3000
 ```
 
 or separately:
 
 ```bash
-npm run build
-npm start
+pnpm build
+pnpm start
 ```
 
 ---
@@ -70,24 +70,24 @@ npm start
 
 | Command | What it does |
 | --- | --- |
-| `npm run bootstrap` | Install dependencies, create `.env` with generated secrets, migrate, seed. |
-| `npm run setup` | Just the `.env` + migrate + seed part (never overwrites an existing `.env`). |
-| `npm run dev` | Development server with hot reload on `:3000`. |
-| `npm run build` | Production build. |
-| `npm start` | Serve the production build on `:3000`. |
-| `npm run serve` | `build` then `start`, in one command. |
-| `npm test` | Unit tests (Vitest). |
-| `npm run test:e2e` | End-to-end smoke test (Playwright, real browser, real production build). |
-| `npm run test:all` | Typecheck, unit tests, then the smoke test. |
-| `npm run verify` | Typecheck, unit tests, then a production build. |
-| `npm run typecheck` | TypeScript with no emit. |
-| `npm run db:migrate` | Apply any outstanding migrations. |
-| `npm run db:seed` | Add the sample data. |
-| `npm run db:reset` | Delete all links, hours, events and bookings (keeps your profile). |
-| `npm run db:reset -- --sample` | Delete **only** the rows labelled `[Sample]`. |
-| `npm run db:reset -- --hard` | Delete the database file itself. |
+| `pnpm bootstrap` | Install dependencies, create `.env` with generated secrets, migrate, seed. |
+| `pnpm run setup` | Just the `.env` + migrate + seed part (never overwrites an existing `.env`). |
+| `pnpm dev` | Development server with hot reload on `:3000`. |
+| `pnpm build` | Production build. |
+| `pnpm start` | Serve the production build on `:3000`. |
+| `pnpm serve` | `build` then `start`, in one command. |
+| `pnpm test` | Unit tests (Vitest). |
+| `pnpm test:e2e` | End-to-end smoke test (Playwright, real browser, real production build). |
+| `pnpm test:all` | Typecheck, unit tests, then the smoke test. |
+| `pnpm verify` | Typecheck, unit tests, then a production build. |
+| `pnpm typecheck` | TypeScript with no emit. |
+| `pnpm db:migrate` | Apply any outstanding migrations. |
+| `pnpm db:seed` | Add the sample data. |
+| `pnpm db:reset` | Delete all links, hours, events and bookings (keeps your profile). |
+| `pnpm db:reset --sample` | Delete **only** the rows labelled `[Sample]`. |
+| `pnpm db:reset --hard` | Delete the database file itself. |
 
-Before running the E2E test the first time: `npx playwright install chromium`.
+Before running the E2E test the first time: `pnpm exec playwright install chromium`.
 
 ---
 
@@ -125,7 +125,7 @@ booking page is not listed anywhere — it is reachable only by its address.
 
 **Files.** zcal reads and writes exactly two paths: `.env` (read only, at startup) and the SQLite
 database plus its journal files. It creates the database's parent directory if missing.
-`npm run setup` writes `.env` with mode `600` (owner read/write only).
+`pnpm run setup` writes `.env` with mode `600` (owner read/write only).
 
 **Network.** The server listens on `localhost:3000` by default. It makes **no outbound requests at
 all** unless you set `ZCAL_ICS_FEED_URL` *and* press "Sync from feed" — that is the only network
@@ -278,8 +278,8 @@ that Google Calendar, Apple Calendar, Outlook and Thunderbird will all open.
 
 ```bash
 git clone <your copy> && cd zcal
-npm run bootstrap
-npm run db:reset            # clear the sample data
+pnpm bootstrap
+pnpm db:reset            # clear the sample data
 # then Data → Import → Replace, with your backup file
 ```
 
@@ -313,7 +313,7 @@ HTTP status, never the address.
 
 ## Sample data
 
-`npm run db:seed` (and `npm run bootstrap`) add realistic demo content: two booking links, a
+`pnpm db:seed` (and `pnpm bootstrap`) add realistic demo content: two booking links, a
 working week, six calendar events and two bookings made through the real availability engine.
 
 It is all clearly marked. Every title starts with `[Sample]`, every row carries `is_sample = 1`,
@@ -323,7 +323,7 @@ owner overview shows a banner while any of it remains.
 Deleting it is one click on *Data*, or:
 
 ```bash
-npm run db:reset -- --sample
+pnpm db:reset --sample
 ```
 
 Nothing depends on it. An app with the sample data deleted behaves identically.
@@ -333,9 +333,9 @@ Nothing depends on it. An app with the sample data deleted behaves identically.
 ## Testing
 
 ```bash
-npm test          # 108 unit tests
-npm run test:e2e  # one end-to-end smoke test in a real browser
-npm run test:all  # typecheck + both
+pnpm test      # 108 unit tests
+pnpm test:e2e  # one end-to-end smoke test in a real browser
+pnpm test:all  # typecheck + both
 ```
 
 **Unit tests** (`tests/unit/`) — every test opens its own in-memory database, so they never touch

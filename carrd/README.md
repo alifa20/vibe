@@ -40,12 +40,12 @@ Everything lives in `content.json`.
 Then:
 
 ```sh
-npm run build      # regenerate dist/
-npm run dev        # build, serve on :3000, rebuild on save
-npm start          # build, then serve (what you run in production)
+pnpm build  # regenerate dist/
+pnpm dev    # build, serve on :3000, rebuild on save
+pnpm start  # build, then serve (what you run in production)
 ```
 
-`npm run dev` watches `content.json`, `src/` and `build.mjs`, and rebuilds on
+`pnpm dev` watches `content.json`, `src/` and `build.mjs`, and rebuilds on
 the next request after you save.
 
 ### The design
@@ -80,7 +80,7 @@ Set `"endpoint": "/api/contact"` under `contact` in `content.json` first.
 
 ```sh
 git clone <your repo> /srv/site && cd /srv/site
-npm run build
+pnpm build
 ```
 
 `/etc/systemd/system/site.service`:
@@ -143,7 +143,7 @@ server {
 Set `TRUST_PROXY=1` (as above) so rate limiting sees the real client IP rather
 than the proxy's. Run `certbot --nginx -d example.com` for the certificate.
 
-**Redeploying** is `git pull && npm run build && systemctl restart site`. The
+**Redeploying** is `git pull && pnpm build && systemctl restart site`. The
 restart isn't strictly required — the server notices a rebuild and reloads the
 new CSP on the next request — but it's the honest habit.
 

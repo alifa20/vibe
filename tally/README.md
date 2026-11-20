@@ -17,13 +17,13 @@ from another origin, and a Content-Security-Policy header enforces that.
 ## Quick start
 
 ```sh
-npm install
+pnpm install
 cp .env.example .env
 # set ADMIN_TOKEN and BASE_URL, at minimum
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
-npm start          # http://127.0.0.1:3000/admin
-npm run dev        # same, with --watch
+pnpm start  # http://127.0.0.1:3000/admin
+pnpm dev    # same, with --watch
 ```
 
 The app creates `data/` and `uploads/` on first run and applies its schema

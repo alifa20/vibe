@@ -77,7 +77,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const port = Number(process.env.PORT) || 4173;
   const siteDir = resolve(HERE, "..", "_site");
   if (!existsSync(join(siteDir, "index.html"))) {
-    console.error("✗ _site/ is empty. Run `npm run site:build` first.");
+    console.error("✗ _site/ is empty. Run `pnpm site:build` first.");
     process.exit(1);
   }
   createServer({ siteDir }).listen(port, "127.0.0.1", () => console.log(`vibe preview: http://localhost:${port}/vibe/`));

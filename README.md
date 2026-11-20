@@ -35,13 +35,13 @@ the GitHub Pages site: the hub, a page for each server app, a 404 page, and the
 two live demos with a shared nav strip injected on top.
 
 ```sh
-npm run site:test    # node:test suite for the build, nav and preview server
-npm run site:build   # builds both demos from source and assembles _site/
-npm run site:check   # checks every inline style/script in _site/ is allowed by its CSP
-npm run site:serve   # previews _site/ at http://localhost:4173/vibe/
+pnpm site:test   # node:test suite for the build, nav and preview server
+pnpm site:build  # builds both demos from source and assembles _site/
+pnpm site:check  # checks every inline style/script in _site/ is allowed by its CSP
+pnpm site:serve  # previews _site/ at http://localhost:4173/vibe/
 ```
 
-`npm run site:build` needs `npm ci` in `teleprompter/` first. Pass
+`pnpm site:build` needs `pnpm install --frozen-lockfile` in `teleprompter/` first. Pass
 `--skip-build` (`node site/build.mjs --skip-build`) to reuse existing demo
 builds.
 

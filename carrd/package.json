@@ -10,5 +10,8 @@
     "dev": "node build.mjs && node server.mjs --dev",
     "serve": "node server.mjs"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@10.6.5"
 }

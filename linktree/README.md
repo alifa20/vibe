@@ -4,7 +4,7 @@ A self-hosted replacement for Linktree. One page, one JSON file, first-party
 click tracking, and a stats page behind basic auth.
 
 **No dependencies.** Not "few" — the `package.json` has no `dependencies` block
-at all. It runs on the Node standard library. There is nothing to `npm install`,
+at all. It runs on the Node standard library. There is nothing to `pnpm install`,
 nothing to audit, and no third-party script on the public page.
 
 ```
@@ -23,12 +23,12 @@ deploy/           Caddyfile, nginx.conf, systemd unit, logrotate config
 ## Quick start
 
 ```bash
-cp .env.example .env      # then set STATS_USER, STATS_PASS and HASH_SALT
-npm run build             # generates og.png, favicon, avatar placeholder
-npm start                 # http://127.0.0.1:8787
+cp .env.example .env  # then set STATS_USER, STATS_PASS and HASH_SALT
+pnpm build            # generates og.png, favicon, avatar placeholder
+pnpm start            # http://127.0.0.1:8787
 ```
 
-Node 20.6 or newer. `npm run dev` restarts on file changes.
+Node 20.6 or newer. `pnpm dev` restarts on file changes.
 
 ## Editing links
 
@@ -66,7 +66,7 @@ before you rename:
 { "title": "Code", "slug": "github", "url": "https://github.com/yourhandle" }
 ```
 
-Run `npm run build` after changing the name, bio, avatar or link list — those
+Run `pnpm build` after changing the name, bio, avatar or link list — those
 appear in the social card, which is a real PNG and has to be regenerated.
 
 ## Click tracking
@@ -130,12 +130,12 @@ force TLS.
 
 ## The social card
 
-`npm run build` renders `src/og.mjs` at 1200×630 with headless Chrome and writes
+`pnpm build` renders `src/og.mjs` at 1200×630 with headless Chrome and writes
 `public/og.png`. Any Chrome, Chromium or Edge binary works; set `CHROME_PATH` if
 it lives somewhere unusual.
 
 The server has no such dependency — it only serves the PNG. If your VPS has no
-browser, run `npm run build` on your laptop and copy `public/og.png` up with the
+browser, run `pnpm build` on your laptop and copy `public/og.png` up with the
 rest of the project.
 
 The `<meta property="og:image">` URL carries a `?v=` content hash, so Slack,
@@ -254,7 +254,7 @@ scp links.json root@your-server:/srv/linkinbio/links.json
 ```
 
 That is the whole deploy for a content change — the running server picks it up on
-the next request. Only re-run `npm run build` (and copy `public/og.png` up) when
+the next request. Only re-run `pnpm build` (and copy `public/og.png` up) when
 the name, bio, avatar or link list changed and you want the social card to match.
 
 ## Backups
@@ -268,7 +268,7 @@ rsync -av root@your-server:/srv/linkinbio/data/ ./backup/data/
 
 ## Serving the page as a static file
 
-`npm run build` also writes `dist/index.html` — the same page with no server
+`pnpm build` also writes `dist/index.html` — the same page with no server
 behind it. Useful behind a CDN. `/go/` and `/stats` still need the Node process,
 so the reverse proxy has to route those two paths to it; the commented block at
 the bottom of `deploy/Caddyfile` does exactly that.

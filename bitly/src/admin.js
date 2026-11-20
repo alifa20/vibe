@@ -16,7 +16,7 @@ const REGIONS = new Intl.DisplayNames(['en'], { type: 'region' })
 
 export async function handleAdmin (request, env, ctx, url) {
   if (!env.ADMIN_PASSWORD) {
-    throw new HttpError(503, 'ADMIN_PASSWORD is not set. Run: npx wrangler secret put ADMIN_PASSWORD')
+    throw new HttpError(503, 'ADMIN_PASSWORD is not set. Run: pnpm wrangler secret put ADMIN_PASSWORD')
   }
   const path = url.pathname.replace(/\/+$/, '') || '/admin'
 

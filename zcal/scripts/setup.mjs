@@ -2,7 +2,7 @@
 /**
  * One command to go from a fresh clone to a working app.
  *
- *   npm run setup
+ *   pnpm run setup
  *
  * Creates .env from .env.example with real generated secrets (it never
  * overwrites an existing .env), applies migrations, and adds the sample data.
@@ -68,5 +68,5 @@ if (created && passphrase) {
 } else {
   console.log("Your owner passphrase is the ZCAL_OWNER_PASSWORD value in .env.");
 }
-console.log("\nStart it with:  npm run dev      then open http://localhost:3000");
+console.log("\nStart it with:  pnpm dev      then open http://localhost:3000");
 console.log("----------------------------------------------------------------");

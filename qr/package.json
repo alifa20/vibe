@@ -20,5 +20,11 @@
   "engines": {
     "node": ">=22"
   },
-  "private": "true"
+  "private": "true",
+  "packageManager": "pnpm@10.6.5",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
+  }
 }

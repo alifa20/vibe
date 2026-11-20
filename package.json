@@ -11,5 +11,6 @@
     "site:serve": "node site/serve.mjs",
     "site:test": "node --test 'site/*.test.mjs'",
     "site:check": "node site/check-csp.mjs"
-  }
+  },
+  "packageManager": "pnpm@10.6.5"
 }

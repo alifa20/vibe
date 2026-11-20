@@ -11,7 +11,7 @@ routes = [
 workers_dev = false
 
 # Plain configuration only. Secrets live in `wrangler secret`, never here:
-#   npx wrangler secret put ADMIN_PASSWORD
+#   pnpm wrangler secret put ADMIN_PASSWORD
 [vars]
 # The origin used when building short links and QR codes.
 SHORT_DOMAIN = "go.mydomain.com"
@@ -19,19 +19,19 @@ SHORT_DOMAIN = "go.mydomain.com"
 # root of the domain redirects to.
 FALLBACK_URL = "https://mydomain.com/"
 
-# npx wrangler kv namespace create LINKS   -> paste the id below
+# pnpm wrangler kv namespace create LINKS   -> paste the id below
 [[kv_namespaces]]
 binding = "LINKS"
 id = "PASTE_KV_NAMESPACE_ID"
 
-# npx wrangler d1 create golinks           -> paste the database_id below
+# pnpm wrangler d1 create golinks           -> paste the database_id below
 [[d1_databases]]
 binding = "DB"
 database_name = "golinks"
 database_id = "PASTE_D1_DATABASE_ID"
 
 # Workers Logs is left off on purpose: nothing about your traffic is retained
-# by the platform beyond what D1 holds. `npx wrangler tail` still streams live
+# by the platform beyond what D1 holds. `pnpm wrangler tail` still streams live
 # logs on demand.
 [observability]
 enabled = false

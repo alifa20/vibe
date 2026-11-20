@@ -23,15 +23,15 @@ rows.
 ## Quick start
 
 ```bash
-npm install
-cp .env.example .env      # then set ADMIN_PASSWORD
-npm start                 # http://localhost:3000
+pnpm install
+cp .env.example .env  # then set ADMIN_PASSWORD
+pnpm start            # http://localhost:3000
 ```
 
 Optionally load six sample testimonials so the wall is not empty:
 
 ```bash
-npm run seed
+pnpm seed
 ```
 
 Requires Node 20.11 or newer.
@@ -98,6 +98,7 @@ domain for `testimonials.example.com`.
 sudo apt update && sudo apt install -y nginx curl git
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
+sudo corepack enable  # provides pnpm, pinned by packageManager
 ```
 
 **2. Create a service user and directories**
@@ -116,7 +117,7 @@ sudo chown senja:senja /var/lib/senja
 ```bash
 sudo git clone https://github.com/your-org/senja.git /srv/senja
 cd /srv/senja
-sudo npm ci --omit=dev
+sudo pnpm install --frozen-lockfile --prod
 sudo chown -R senja:senja /srv/senja
 ```
 
@@ -180,7 +181,7 @@ Visit `https://your-real-domain.com/admin` and log in with `ADMIN_USER` /
 ```bash
 cd /srv/senja
 sudo git pull
-sudo npm ci --omit=dev
+sudo pnpm install --frozen-lockfile --prod
 sudo systemctl restart senja
 ```
 

@@ -11,7 +11,7 @@ const result = seedSampleData(db);
 console.log(`Database: ${file}`);
 if (result.alreadyPresent) {
   console.log("Sample data is already present — nothing added.");
-  console.log("Remove it first with `npm run db:reset -- --sample` if you want a fresh set.");
+  console.log("Remove it first with `pnpm db:reset --sample` if you want a fresh set.");
 } else {
   console.log("Added sample data, every row labelled [Sample]:");
   console.log(`  booking links     ${result.eventTypes}`);
@@ -20,6 +20,6 @@ if (result.alreadyPresent) {
   console.log(`  bookings          ${result.bookings}`);
   console.log("");
   console.log("Delete all of it at any time from the Data page (/admin/data), or with:");
-  console.log("  npm run db:reset -- --sample");
+  console.log("  pnpm db:reset --sample");
 }
 db.close();

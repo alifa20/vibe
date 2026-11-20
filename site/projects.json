@@ -8,7 +8,7 @@
       "description": "a local, single-page teleprompter. scripts stay in your browser.",
       "stack": "vite + react + ts",
       "color": "#ff5247",
-      "demo": { "build": "npm run build -- --base=./", "out": "dist" }
+      "demo": { "build": "pnpm build --base=./", "out": "dist" }
     },
     {
       "slug": "carrd",
@@ -37,10 +37,10 @@
         "run": {
           "commands": [
             { "comment": "from your clone of alifa20/vibe", "cmd": "cd bitly" },
-            { "cmd": "npm install" },
+            { "cmd": "pnpm install" },
             { "comment": "then set a local ADMIN_PASSWORD", "cmd": "cp .dev.vars.example .dev.vars" },
-            { "comment": "local kv + d1, once", "cmd": "npm run db:init:local" },
-            { "comment": "→ http://127.0.0.1:8787", "cmd": "npm run dev" }
+            { "comment": "local kv + d1, once", "cmd": "pnpm db:init:local" },
+            { "comment": "→ http://127.0.0.1:8787", "cmd": "pnpm dev" }
           ],
           "note": "needs node and wrangler; deploying needs a cloudflare account. it can't live on github pages because every redirect runs on a worker and the clicks sit in d1."
         },
@@ -60,14 +60,14 @@
           { "title": "links.json is the cms", "detail": "edit the file, the page updates on the next request" },
           { "title": "first-party click tracking", "detail": "one tab-separated line per click, no cookies" },
           { "title": "/stats behind basic auth", "detail": "clicks per link and per day, referrers, bots split out" },
-          { "title": "zero dependencies", "detail": "node stdlib only, nothing to npm install" }
+          { "title": "zero dependencies", "detail": "node stdlib only, nothing to pnpm install" }
         ],
         "run": {
           "commands": [
             { "comment": "from your clone of alifa20/vibe", "cmd": "cd linktree" },
             { "comment": "then set STATS_USER, STATS_PASS and HASH_SALT", "cmd": "cp .env.example .env" },
-            { "comment": "og.png, favicon, avatar placeholder", "cmd": "npm run build" },
-            { "comment": "→ http://127.0.0.1:8787", "cmd": "npm start" }
+            { "comment": "og.png, favicon, avatar placeholder", "cmd": "pnpm build" },
+            { "comment": "→ http://127.0.0.1:8787", "cmd": "pnpm start" }
           ],
           "note": "needs node 20.6+. it can't live on github pages because every click goes through the server's /go/ redirect and lands in its log."
         },
@@ -91,9 +91,9 @@
         "run": {
           "commands": [
             { "comment": "from your clone of alifa20/vibe", "cmd": "cd qr" },
-            { "cmd": "npm install" },
+            { "cmd": "pnpm install" },
             { "comment": "then set ADMIN_USER / ADMIN_PASS", "cmd": "cp .env.example .env" },
-            { "comment": "→ http://localhost:3000", "cmd": "npm start" }
+            { "comment": "→ http://localhost:3000", "cmd": "pnpm start" }
           ],
           "note": "needs node 22+. it can't live on github pages because dynamic codes redirect through the server and the scans sit in a sqlite file."
         },
@@ -118,10 +118,10 @@
         "run": {
           "commands": [
             { "comment": "from your clone of alifa20/vibe", "cmd": "cd senja" },
-            { "cmd": "npm install" },
+            { "cmd": "pnpm install" },
             { "comment": "then set ADMIN_PASSWORD", "cmd": "cp .env.example .env" },
-            { "comment": "optional: six sample testimonials", "cmd": "npm run seed" },
-            { "comment": "→ http://localhost:3000", "cmd": "npm start" }
+            { "comment": "optional: six sample testimonials", "cmd": "pnpm seed" },
+            { "comment": "→ http://localhost:3000", "cmd": "pnpm start" }
           ],
           "note": "needs node 20.11+. it can't live on github pages because submissions and avatars are stored by the server, in sqlite and on disk."
         },
@@ -146,9 +146,9 @@
         "run": {
           "commands": [
             { "comment": "from your clone of alifa20/vibe", "cmd": "cd tally" },
-            { "cmd": "npm install" },
+            { "cmd": "pnpm install" },
             { "comment": "then set ADMIN_TOKEN and BASE_URL", "cmd": "cp .env.example .env" },
-            { "comment": "→ http://127.0.0.1:3000/admin", "cmd": "npm start" }
+            { "comment": "→ http://127.0.0.1:3000/admin", "cmd": "pnpm start" }
           ],
           "note": "needs node 20+. it can't live on github pages because responses and uploads are written to the server's disk."
         },
@@ -173,8 +173,8 @@
         "run": {
           "commands": [
             { "comment": "from your clone of alifa20/vibe", "cmd": "cd zcal" },
-            { "comment": "deps + .env + sample data", "cmd": "npm run bootstrap" },
-            { "comment": "→ http://localhost:3000", "cmd": "npm run dev" }
+            { "comment": "deps + .env + sample data", "cmd": "pnpm bootstrap" },
+            { "comment": "→ http://localhost:3000", "cmd": "pnpm dev" }
           ],
           "note": "needs node 20.9+. `bootstrap` prints a passphrase: that's your login. it can't live on github pages because your bookings sit in a sqlite file."
         },
