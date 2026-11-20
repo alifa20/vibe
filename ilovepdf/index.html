@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Merge, split, organise, convert and compress PDFs in your browser. Nothing is uploaded." />
+    <meta name="referrer" content="no-referrer" />
+    <title>pdf-tools</title>
+  </head>
+  <body>
+    <div id="app" class="app">
+      <header class="top">
+        <h1 class="brand">pdf-tools</h1>
+        <p class="privacy">
+          <span class="privacy-dot" aria-hidden="true"></span>
+          All processing happens on this device. Your files are never uploaded.
+        </p>
+      </header>
+
+      <div id="tabs" class="tabs" role="tablist" aria-label="Tools"></div>
+
+      <main id="panel" class="panel" role="tabpanel" tabindex="-1"></main>
+
+      <footer class="foot">
+        <p>Runs entirely in your browser with pdf-lib, pdf.js and qpdf. Close the tab and everything is gone.</p>
+      </footer>
+    </div>
+
+    <div id="live" class="visually-hidden" role="status" aria-live="polite"></div>
+    <div id="alerts" class="visually-hidden" aria-live="assertive"></div>
+
+    <dialog id="pw-dialog" class="dialog" aria-labelledby="pw-title">
+      <form id="pw-form" method="dialog">
+        <h2 id="pw-title">This PDF is password protected</h2>
+        <p class="dialog-file" id="pw-file"></p>
+        <label for="pw-input">Password</label>
+        <input id="pw-input" class="text-input" type="password" autocomplete="off" required aria-describedby="pw-error pw-note" />
+        <p id="pw-error" class="field-error" aria-live="assertive" hidden></p>
+        <p id="pw-note" class="hint">The password is checked here in your browser. The copy you save will not be protected.</p>
+        <div class="dialog-actions">
+          <button type="button" id="pw-cancel" class="btn ghost">Remove file</button>
+          <button type="submit" class="btn primary">Unlock</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -9,38 +9,71 @@ import { navStyle, renderNav, injectNav, patchCsp, styleHash, ensureIconLink } f
 const m = loadManifest(readFileSync(new URL("./projects.json", import.meta.url), "utf8"));
 const b64sha = (s) => createHash("sha256").update(s, "utf8").digest("base64");
 
-test("teleprompter nav: prev wraps to zcal, next is personal-site", () => {
+// The strip covers on-site projects only (demo and page), in manifest order; external ones are left out.
+const onSite = (man) => man.projects.filter((p) => !p.external);
+const reRaw = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const stepRe = (dir, p) => new RegExp(`<a class="vibe-step vibe-${dir}" href="\\.\\./${reRaw(p.slug)}/" aria-label="${dir === "prev" ? "previous" : "next"}: ${reRaw(p.name)}">`);
+
+/** A copy of the real manifest with one fake `page` and one fake `demo` project appended. */
+const grown = () => {
+  const j = JSON.parse(readFileSync(new URL("./projects.json", import.meta.url), "utf8"));
+  const page = structuredClone(j.projects.find((p) => p.page));
+  j.projects.push({ ...page, slug: "fake-page", name: "fakepage", color: "#ffd23f" });
+  j.projects.push({ slug: "fake-demo", name: "fakedemo", description: "a fake demo.", stack: "none", color: "#ffd23f", demo: { build: "true", out: "dist" } });
+  return loadManifest(j);
+};
+
+for (const [label, man] of [["real manifest", m], ["manifest plus a fake page and demo", grown()]]) {
+  test(`${label}: first project's prev wraps to the last, last project's next wraps to the first`, () => {
+    const ps = onSite(man);
+    const [first, second] = ps;
+    const [last, beforeLast] = [ps.at(-1), ps.at(-2)];
+    const a = renderNav(man, first.slug);
+    assert.match(a, /<nav class="vibe-nav" aria-label="vibe projects">/);
+    assert.match(a, stepRe("prev", last));
+    assert.match(a, stepRe("next", second));
+    const z = renderNav(man, last.slug);
+    assert.match(z, stepRe("prev", beforeLast));
+    assert.match(z, stepRe("next", first));
+  });
+
+  test(`${label}: every on-site project steps to its neighbours in manifest order`, () => {
+    const ps = onSite(man);
+    ps.forEach((p, i) => {
+      const html = renderNav(man, p.slug);
+      assert.match(html, stepRe("prev", ps[(i - 1 + ps.length) % ps.length]), `${p.slug} prev`);
+      assert.match(html, stepRe("next", ps[(i + 1) % ps.length]), `${p.slug} next`);
+    });
+  });
+
+  test(`${label}: switcher menu lists the on-site projects in two groups, current marked (external ones left out)`, () => {
+    const ps = onSite(man);
+    const cur = ps[0];
+    const html = renderNav(man, cur.slug);
+    const items = [...html.matchAll(/<a class="vibe-item vibe-p-([a-z0-9-]+)"[^>]*href="([^"]+)"([^>]*)>/g)];
+    assert.equal(items.length, ps.length);
+    const demos = ps.filter((p) => p.demo);
+    const rest = ps.filter((p) => !p.demo);
+    assert.deepEqual(items.map((i) => i[2]), [...demos, ...rest].map((p) => `../${p.slug}/`), "live demos first, each group in manifest order");
+    for (const p of man.projects.filter((p) => p.external)) assert.doesNotMatch(html, new RegExp(reRaw(p.slug)));
+    const current = items.filter((i) => /aria-current="page"/.test(i[3]));
+    assert.equal(current.length, 1);
+    assert.equal(current[0][2], `../${cur.slug}/`);
+    assert.match(html, /you're here/);
+    const groups = [...html.matchAll(/<ul class="vibe-group"[^>]*>([\s\S]*?)<\/ul>/g)];
+    assert.equal(groups.length, 2);
+    assert.equal((groups[0][1].match(/vibe-item/g) || []).length, demos.length);
+    assert.equal((groups[1][1].match(/vibe-item/g) || []).length, rest.length);
+    assert.match(html, />live demos</);
+    assert.match(html, />run it yourself</);
+  });
+}
+
+test("teleprompter nav: crumb, back link, switcher label and source link", () => {
   const html = renderNav(m, "teleprompter");
-  assert.match(html, /<nav class="vibe-nav" aria-label="vibe projects">/);
-  assert.match(html, /<a class="vibe-step vibe-prev" href="\.\.\/zcal\/" aria-label="previous: zcal">/);
-  assert.match(html, /<a class="vibe-step vibe-next" href="\.\.\/carrd\/" aria-label="next: personal-site">/);
   assert.match(html, /href="\.\.\/"[^>]*>← vibe</);
   assert.match(html, /\/ teleprompter</);
   assert.match(html, /aria-label="switch project, current: teleprompter"/);
-});
-
-test("zcal nav: prev forms, next wraps to teleprompter", () => {
-  const html = renderNav(m, "zcal");
-  assert.match(html, /href="\.\.\/tally\/" aria-label="previous: forms"/);
-  assert.match(html, /href="\.\.\/teleprompter\/" aria-label="next: teleprompter"/);
-});
-
-test("switcher menu: the 8 on-site projects in 2 groups, current marked (external ones left out)", () => {
-  const html = renderNav(m, "teleprompter");
-  const items = [...html.matchAll(/<a class="vibe-item vibe-p-([a-z-]+)"[^>]*href="([^"]+)"([^>]*)>/g)];
-  assert.equal(items.length, 8);
-  assert.deepEqual(items.map((i) => i[2]), m.projects.filter((p) => !p.external).map((p) => `../${p.slug}/`));
-  assert.doesNotMatch(html, /myshot/);
-  const current = items.filter((i) => /aria-current="page"/.test(i[3]));
-  assert.equal(current.length, 1);
-  assert.equal(current[0][2], "../teleprompter/");
-  assert.match(html, /you're here/);
-  const groups = [...html.matchAll(/<ul class="vibe-group"[^>]*>([\s\S]*?)<\/ul>/g)];
-  assert.equal(groups.length, 2);
-  assert.equal((groups[0][1].match(/vibe-item/g) || []).length, 2);
-  assert.equal((groups[1][1].match(/vibe-item/g) || []).length, 6);
-  assert.match(html, />live demos</);
-  assert.match(html, />run it yourself</);
   assert.match(html, /href="https:\/\/github\.com\/alifa20\/vibe\/tree\/main\/teleprompter"[^>]*>[\s\S]*source on github/);
 });
 

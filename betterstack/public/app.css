@@ -1,0 +1,94 @@
+:root {
+  --bg: #f6f7f9;
+  --fg: #16181d;
+  --muted: #5d6573;
+  --card: #ffffff;
+  --line: #dfe3ea;
+  --accent: #2563eb;
+  --up: #0f7b3f;
+  --up-bg: #dcf5e6;
+  --down: #b42318;
+  --down-bg: #fde4e1;
+  --late: #8a5a00;
+  --late-bg: #fdf0cf;
+  --idle: #4b5563;
+  --idle-bg: #e7e9ee;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111317;
+    --fg: #e8eaee;
+    --muted: #9aa3b2;
+    --card: #1a1d23;
+    --line: #2c313a;
+    --accent: #6ea0ff;
+    --up: #5fd38d;
+    --up-bg: #12301f;
+    --down: #ff8a7a;
+    --down-bg: #3a1714;
+    --late: #f3c25a;
+    --late-bg: #3a2c0c;
+    --idle: #b4bccb;
+    --idle-bg: #262a32;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+a { color: var(--accent); }
+main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 1.5rem; margin: 0 0 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+h2 { font-size: 1.1rem; margin: 28px 0 10px; }
+.top {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--line);
+}
+.top nav { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.brand { font-weight: 700; color: var(--fg); text-decoration: none; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+.narrow { max-width: 420px; margin: 40px auto; }
+.form { max-width: 640px; }
+.field { display: block; margin: 0 0 14px; flex: 1; }
+.field > span { display: block; font-weight: 600; margin-bottom: 4px; }
+.field input, .field select {
+  width: 100%; padding: 8px 10px; font: inherit; color: inherit;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+}
+.field.has-error input, .field.has-error select { border-color: var(--down); }
+.row { display: flex; gap: 14px; flex-wrap: wrap; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+.error { color: var(--down); display: block; }
+.break { overflow-wrap: anywhere; }
+.flash { padding: 8px 12px; border-radius: 6px; }
+.flash.err { background: var(--down-bg); color: var(--down); }
+.actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.inline { display: inline; margin: 0; }
+button, .button {
+  display: inline-block; padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer;
+  background: var(--accent); color: #fff; border: 0; border-radius: 6px; text-decoration: none;
+}
+button.secondary, .button.secondary { background: var(--idle-bg); color: var(--fg); }
+button.danger, .button.danger { background: var(--down); color: #fff; }
+button.link { background: none; color: var(--accent); padding: 0; font-weight: 400; text-decoration: underline; }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+.badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+.badge-up { background: var(--up-bg); color: var(--up); }
+.badge-down { background: var(--down-bg); color: var(--down); }
+.badge-late { background: var(--late-bg); color: var(--late); }
+.badge-pending, .badge-paused, .badge-new { background: var(--idle-bg); color: var(--idle); }
+.spark { color: var(--accent); vertical-align: middle; }
+pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85rem; }
+pre { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; overflow-x: auto; }
+.summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.summary .card { padding: 10px 14px; min-width: 120px; }
+.summary strong { display: block; font-size: 1.4rem; }

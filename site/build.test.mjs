@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
 import { assemble } from "./build.mjs";
+import { planInstalls } from "./install-demos.mjs";
 import { checkCsp } from "./check-csp.mjs";
 import { loadManifest } from "./hub.mjs";
 import { createServer } from "./serve.mjs";
@@ -39,18 +42,30 @@ const carrdPage = (title) => `<!doctype html>
 </html>
 `;
 
-// A repo-shaped fixture: real manifest, fake demo output folders.
-function fixtureRoot(name) {
+// A repo-shaped fixture: a stub output folder for every demo in the manifest. teleprompter
+// and carrd get pages shaped like their real builds; any other demo gets a CSP'd index.html.
+function fixtureRoot(name, manifest = REAL) {
   const root = join(TMP, name);
-  mkdirSync(join(root, "teleprompter", "dist", "assets"), { recursive: true });
-  writeFileSync(join(root, "teleprompter", "dist", "index.html"), TELEPROMPTER);
-  writeFileSync(join(root, "teleprompter", "dist", "favicon.svg"), "<svg/>");
-  writeFileSync(join(root, "teleprompter", "dist", "assets", "index-abc.js"), "console.log(1)");
-  mkdirSync(join(root, "carrd", "dist"), { recursive: true });
-  for (const page of ["index", "thanks", "404"]) writeFileSync(join(root, "carrd", "dist", `${page}.html`), carrdPage(page));
-  writeFileSync(join(root, "carrd", "dist", "favicon.svg"), "<svg/>");
+  for (const p of manifest.projects.filter((p) => p.demo)) {
+    const out = join(root, p.slug, p.demo.out);
+    mkdirSync(out, { recursive: true });
+    if (p.slug === "teleprompter") {
+      mkdirSync(join(out, "assets"), { recursive: true });
+      writeFileSync(join(out, "index.html"), TELEPROMPTER);
+      writeFileSync(join(out, "favicon.svg"), "<svg/>");
+      writeFileSync(join(out, "assets", "index-abc.js"), "console.log(1)");
+    } else if (p.slug === "carrd") {
+      for (const page of ["index", "thanks", "404"]) writeFileSync(join(out, `${page}.html`), carrdPage(page));
+      writeFileSync(join(out, "favicon.svg"), "<svg/>");
+    } else {
+      writeFileSync(join(out, "index.html"), carrdPage(p.name));
+    }
+  }
   return root;
 }
+
+const demos = (m) => m.projects.filter((p) => p.demo);
+const pageProjects = (m) => m.projects.filter((p) => p.page);
 
 function tree(dir, base = dir) {
   const out = {};
@@ -62,16 +77,17 @@ function tree(dir, base = dir) {
   return out;
 }
 
-test("assemble writes the hub, 404, both demos and six project pages", () => {
+test("assemble writes the hub, 404, every demo and a page per server project", () => {
   const root = fixtureRoot("full");
   const { outDir, pages } = assemble({ root, skipBuild: true, manifest: REAL });
   assert.equal(outDir, join(root, "_site"));
   for (const p of ["index.html", "404.html", "favicon.svg", "teleprompter/index.html", "carrd/index.html", "carrd/thanks.html", "carrd/404.html"]) {
     assert.ok(existsSync(join(outDir, p)), `${p} exists`);
   }
-  for (const slug of ["bitly", "linktree", "qr", "senja", "tally", "zcal"]) {
-    assert.ok(pages.includes(`${slug}/index.html`), `${slug} project page`);
-  }
+  for (const p of demos(REAL)) assert.ok(existsSync(join(outDir, p.slug, "index.html")), `${p.slug} demo`);
+  assert.ok(pageProjects(REAL).length > 0);
+  for (const p of pageProjects(REAL)) assert.ok(pages.includes(`${p.slug}/index.html`), `${p.slug} project page`);
+  for (const p of REAL.projects.filter((p) => p.external)) assert.equal(existsSync(join(outDir, p.slug)), false, `${p.slug} is not built here`);
   assert.equal(readFileSync(join(outDir, "teleprompter", "assets", "index-abc.js"), "utf8"), "console.log(1)");
   assert.equal(existsSync(join(root, "_site.tmp")), false, "temp folder cleaned up");
 });
@@ -89,6 +105,21 @@ test("every demo page gets the nav, the right current project, and a CSP hash", 
   assert.match(tp, /<nav class="vibe-nav"/);
   assert.match(tp, /<link rel="icon" href="\.\/favicon\.svg"/, "teleprompter gains a relative icon link");
   assert.equal((readFileSync(join(outDir, "carrd", "index.html"), "utf8").match(/rel="icon"/g) || []).length, 1, "carrd keeps its single icon link");
+});
+
+test("a new demo in the manifest gets the nav and a CSP hash, with no test edits", () => {
+  const j = JSON.parse(readFileSync(new URL("./projects.json", import.meta.url), "utf8"));
+  j.projects.push({ slug: "fake-demo", name: "fakedemo", description: "a fake demo.", stack: "none", color: "#ffd23f", demo: { build: "true", out: "dist" } });
+  const m = loadManifest(j);
+  assert.ok(demos(m).length >= 3, "at least a third demo");
+  const root = fixtureRoot("extra-demo", m);
+  const { outDir, pages } = assemble({ root, skipBuild: true, manifest: m });
+  assert.ok(pages.includes("fake-demo/index.html"));
+  const html = readFileSync(join(outDir, "fake-demo", "index.html"), "utf8");
+  assert.match(html, /<nav class="vibe-nav"/);
+  assert.match(html, /aria-current="page"[^>]*>[\s\S]*?fakedemo/);
+  assert.match(html, /style-src &#39;sha256-PAGE&#39; &#39;sha256-[A-Za-z0-9+/=]+&#39;/, "nav hash appended to style-src");
+  assert.deepEqual(checkCsp(outDir), []);
 });
 
 test("running assemble twice gives the same tree", () => {
@@ -146,6 +177,26 @@ test("checkCsp requires inline scripts to be hashed too, and ignores external on
   assert.deepEqual(checkCsp(dir), []);
   writeFileSync(join(dir, "b.html"), `<meta http-equiv="Content-Security-Policy" content="default-src &#39;self&#39;"><script>alert(1)</script>`);
   assert.match(checkCsp(dir).join("\n"), /b\.html: inline <script>/);
+});
+
+/* ── install-demos.mjs ── */
+
+test("planInstalls lists demos with a lockfile and skips the rest", () => {
+  const real = planInstalls({ manifest: REAL });
+  assert.ok(real.install.includes("teleprompter"), "teleprompter has a lockfile");
+  assert.ok(real.skip.includes("carrd"), "carrd has no lockfile");
+  assert.deepEqual([...real.install, ...real.skip].sort(), demos(REAL).map((p) => p.slug).sort(), "only demos, each once");
+
+  const root = fixtureRoot("install");
+  writeFileSync(join(root, "teleprompter", "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
+  assert.deepEqual(planInstalls({ root, manifest: REAL }), { install: ["teleprompter"], skip: demos(REAL).map((p) => p.slug).filter((s) => s !== "teleprompter") });
+});
+
+test("install-demos --dry-run lists teleprompter, skips carrd and installs nothing", () => {
+  const out = execFileSync(process.execPath, [fileURLToPath(new URL("./install-demos.mjs", import.meta.url)), "--dry-run"], { encoding: "utf8" });
+  assert.match(out, /would install teleprompter/);
+  assert.match(out, /skip carrd: no pnpm-lock\.yaml/);
+  assert.doesNotMatch(out, /^install /m);
 });
 
 /* ── serve.mjs ── */

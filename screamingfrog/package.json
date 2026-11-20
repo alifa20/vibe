@@ -1,0 +1,22 @@
+{
+  "name": "sitecrawl",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A polite, same-origin SEO crawler that writes one self-contained HTML report.",
+  "bin": {
+    "sitecrawl": "bin/crawl.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "crawl": "node bin/crawl.mjs",
+    "sample": "node scripts/sample-report.mjs"
+  },
+  "packageManager": "pnpm@10.6.5",
+  "dependencies": {
+    "cheerio": "1.2.0"
+  }
+}

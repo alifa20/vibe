@@ -28,15 +28,25 @@ jobs:
         with:
           package_json_file: teleprompter/package.json
 
+      # Every demo in site/projects.json that has a pnpm-lock.yaml, one path per line,
+      # so the pnpm store cache tracks all of them (KTD2). Runs on the runner's own node.
+      - name: List demo lockfiles
+        id: demos
+        run: |
+          {
+            echo "lockfiles<<EOF"
+            node site/install-demos.mjs --lockfiles
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: teleprompter/pnpm-lock.yaml
+          cache-dependency-path: ${{ steps.demos.outputs.lockfiles }}
 
-      - name: Install teleprompter dependencies
-        run: pnpm install --frozen-lockfile
-        working-directory: teleprompter
+      - name: Install every demo's dependencies
+        run: node site/install-demos.mjs
 
       - name: Test the site assembler
         run: node --test 'site/*.test.mjs'

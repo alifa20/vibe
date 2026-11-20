@@ -1,0 +1,9 @@
+{
+  "/old-page": { "status": 301, "location": "/older-page" },
+  "/older-page": { "status": 301, "location": "/new-page.html" },
+  "/loop-a": { "status": 302, "location": "/loop-b" },
+  "/loop-b": { "status": 302, "location": "/loop-a" },
+  "/two-h1.html": { "headers": { "X-Robots-Tag": "noindex" } },
+  "/busy.html": { "busyOnce": 1 },
+  "/sitemap-pages.xml.gz": { "gzip": "sitemap-pages.xml" }
+}

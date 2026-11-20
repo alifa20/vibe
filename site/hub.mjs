@@ -21,7 +21,8 @@
 
 import { esc, MONO, navStyle, renderNav, SANS } from "./nav.mjs";
 
-const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
+  "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
 const word = (n) => WORDS[n] ?? String(n);
 const num = (i) => String(i + 1).padStart(2, "0");
 
