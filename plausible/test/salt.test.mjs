@@ -1,4 +1,7 @@
 import { test } from 'node:test';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import assert from 'node:assert/strict';
 import { openDb } from '../src/db.mjs';
 import { createSaltStore, visitorHash } from '../src/salt.mjs';
@@ -81,4 +84,27 @@ test('salts are 32 random bytes', () => {
   const db = openDb(':memory:');
   const { salt } = createSaltStore(db, fakeClock()).current();
   assert.equal(Buffer.from(salt).length, 32);
+});
+
+test('a rotated-out salt leaves no bytes in the database file or its WAL', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'analytics-salt-'));
+  const file = path.join(dir, 'salt.db');
+  const db = openDb(file);
+  try {
+    const clock = fakeClock('2026-11-20T10:00:00Z');
+    const salts = createSaltStore(db, clock);
+    const old = Buffer.from(salts.current().salt);
+    clock.set('2026-11-21T00:00:30Z');
+    salts.rotate();
+    const today = Buffer.from(salts.current().salt);
+    for (const f of [file, `${file}-wal`]) {
+      if (!fs.existsSync(f)) continue;
+      const bytes = fs.readFileSync(f);
+      assert.equal(bytes.indexOf(old), -1, `old salt bytes found in ${path.basename(f)}`);
+    }
+    assert.notEqual(fs.readFileSync(file).indexOf(today), -1, "sanity: today's salt is on disk");
+  } finally {
+    db.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

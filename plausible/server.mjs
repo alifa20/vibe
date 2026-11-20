@@ -19,6 +19,7 @@ function fail(message) {
 
 const adminPassword = env.ADMIN_PASSWORD || '';
 if (adminPassword.length < 12) fail('ADMIN_PASSWORD must be set to at least 12 characters (see .env.example).');
+if (adminPassword.startsWith('change-me')) fail('ADMIN_PASSWORD is still a change-me placeholder; set a long random one (see .env.example).');
 
 let retentionDays = null;
 if (env.RETENTION_DAYS) {

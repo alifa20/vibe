@@ -50,7 +50,7 @@ All settings come from environment variables. `.env.example` documents each one.
 
 | Variable | Default | What it does |
 |---|---|---|
-| `ADMIN_PASSWORD` | required | The admin password. At least 12 characters. Changing it signs everyone out. |
+| `ADMIN_PASSWORD` | required | The admin password. At least 12 characters; the server refuses to start without one or with a `change-me...` placeholder. Changing it signs everyone out. |
 | `PORT` | `3000` | Port to listen on. |
 | `HOST` | `127.0.0.1` | Bind address. The default keeps the app private to the machine. |
 | `TRUST_PROXY` | empty | Number of reverse proxies in front. Leave empty when there are none, so `X-Forwarded-*` headers are ignored. |

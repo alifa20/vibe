@@ -12,7 +12,7 @@ import { isBotUA, parseUA } from './ua.mjs';
 const UTM_FIELDS = ['utm_source', 'utm_medium', 'utm_campaign'];
 const MAX_PATH = 512;
 const MAX_FIELD = 128;
-const MAX_QUEUE = 10_000;
+export const MAX_QUEUE = 10_000;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -109,12 +109,24 @@ export function createCollector({ db, clock, salts, trustProxy = false }) {
 
   let queue = [];
 
-  /** Writes everything queued in a single transaction. Returns the row count. */
+  /**
+   * Writes everything queued in a single transaction. Returns the row count.
+   * Rows leave the queue only once the transaction commits: on a SQLite error
+   * (busy past busy_timeout, disk full) they are put back for the next flush,
+   * keeping the newest MAX_QUEUE, and 0 is returned instead of throwing.
+   */
   function flush() {
     if (!queue.length) return 0;
     const rows = queue;
     queue = [];
-    db.transaction((batch) => { for (const row of batch) insert.run(row); })(rows);
+    try {
+      db.transaction((batch) => { for (const row of batch) insert.run(row); })(rows);
+    } catch (err) {
+      console.error(`analytics: flush of ${rows.length} pageviews failed, kept for retry:`, err);
+      queue = rows.concat(queue);
+      if (queue.length > MAX_QUEUE) queue = queue.slice(-MAX_QUEUE);
+      return 0;
+    }
     return rows.length;
   }
 

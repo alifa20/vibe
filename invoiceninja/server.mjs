@@ -10,6 +10,7 @@ const env = process.env;
 const adminPassword = (env.ADMIN_PASSWORD || '').trim();
 if (!adminPassword) fail('Missing ADMIN_PASSWORD.');
 if (adminPassword.length < 12) fail('ADMIN_PASSWORD must be at least 12 characters.');
+if (adminPassword.startsWith('change-me')) fail('ADMIN_PASSWORD is still a change-me placeholder. Set a long random one.');
 
 const port = Number.parseInt(env.PORT || '3000', 10);
 const host = env.HOST || '127.0.0.1';

@@ -15,9 +15,10 @@ export function createSaltStore(db, clock) {
   const dropOthers = db.prepare('DELETE FROM salts WHERE day <> ?');
 
   let current = null;
+  let dropped = 0;
 
-  const rotate = db.transaction((day) => {
-    dropOthers.run(day);
+  const rotateTx = db.transaction((day) => {
+    dropped = dropOthers.run(day).changes;
     const stored = read.get(day);
     if (stored) {
       current = { day, salt: Buffer.from(stored.salt) };
@@ -27,6 +28,19 @@ export function createSaltStore(db, clock) {
     }
     return current;
   });
+
+  /**
+   * secure_delete zeroes the old salt's bytes in the page it lived on, but in
+   * WAL mode the earlier versions of that page stay in the -wal file until a
+   * checkpoint. TRUNCATE copies the zeroed page into the database and empties
+   * the WAL. If another connection is mid-read the checkpoint cannot finish;
+   * the old frames are then overwritten by later checkpoints instead.
+   */
+  function rotate(day) {
+    const result = rotateTx(day);
+    if (dropped && !db.memory) db.pragma('wal_checkpoint(TRUNCATE)');
+    return result;
+  }
 
   return {
     /**

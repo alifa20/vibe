@@ -34,6 +34,8 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS events_site_ts  ON events (site_id, ts);
   CREATE INDEX IF NOT EXISTS events_site_day ON events (site_id, day);
   CREATE INDEX IF NOT EXISTS events_ts       ON events (ts);
+  -- Today's totals for every site on the sites list: WHERE day = ? GROUP BY site_id.
+  CREATE INDEX IF NOT EXISTS events_day_site ON events (day, site_id);
 
   -- Holds today's salt only. Yesterday's row is deleted when the day turns.
   CREATE TABLE IF NOT EXISTS salts (
@@ -48,6 +50,8 @@ export function openDb(file) {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.pragma('busy_timeout = 5000');
+  // Deleted rows (yesterday's salt) are zeroed on their pages, not just unlinked.
+  db.pragma('secure_delete = ON');
   db.exec(SCHEMA);
   return db;
 }

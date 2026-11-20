@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addSite } from '../src/db.mjs';
+import { addSite, openDb } from '../src/db.mjs';
 import { normaliseDomain } from '../src/dashboard.mjs';
 import { barChart } from '../src/charts.mjs';
 import { boot, login, seedEvent, hit } from './helpers.mjs';
@@ -219,4 +219,12 @@ test('barChart draws bars with attributes only and scales to the peak', () => {
   assert.ok(!/style=/.test(svg));
   assert.match(svg, /<rect class="bar pv" data-day="2026-11-19" data-pageviews="4" data-visitors="2" x="[\d.]+" y="[\d.]+" width="[\d.]+" height="[\d.]+"/);
   assert.match(svg, /<rect class="bar pv zero" data-day="2026-11-20"/);
+});
+
+test('the sites list "today" query is served by the (day, site_id) index', () => {
+  const db = openDb(':memory:');
+  const plan = db.prepare(`EXPLAIN QUERY PLAN
+    SELECT site_id, COUNT(*) AS pageviews, COUNT(DISTINCT visitor_hash) AS visitors
+      FROM events WHERE day = ? GROUP BY site_id`).all('2026-11-20').map((r) => r.detail).join('\n');
+  assert.match(plan, /SEARCH events USING INDEX events_day_site \(day=\?\)/);
 });

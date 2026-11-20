@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { openDb, addSite } from '../src/db.mjs';
-import { normalisePage, referrerHost } from '../src/collect.mjs';
+import { normalisePage, referrerHost, createCollector, MAX_QUEUE } from '../src/collect.mjs';
+import { createSaltStore } from '../src/salt.mjs';
 import { boot, hit, events, fakeClock, CHROME_UA } from './helpers.mjs';
 
 const page = (p = '/') => ({ d: 'example.com', u: `https://example.com${p}`, r: null });
@@ -238,6 +239,88 @@ test('stop() flushes whatever is still queued', async () => {
   ctx.stop();
   assert.equal(events(db).length, 1);
   await ctx.close();
+});
+
+// A real SQLite error inside the insert transaction, removable to "recover".
+const failInserts = (db) =>
+  db.exec("CREATE TEMP TRIGGER fail_inserts BEFORE INSERT ON events BEGIN SELECT RAISE(ABORT, 'disk I/O error'); END");
+const healInserts = (db) => db.exec('DROP TRIGGER temp.fail_inserts');
+
+test('a failed flush keeps the batch queued and the flush timer does not throw', async (t) => {
+  const logged = t.mock.method(console, 'error', () => {});
+  const clock = fakeClock();
+  await withSite({ clock }, async ({ base, db, flush, start }) => {
+    start();
+    await hit(base, page('/a'));
+    await hit(base, page('/b'));
+    failInserts(db);
+    assert.doesNotThrow(() => clock.fire(1000));
+    assert.equal(flush(), 0, 'nothing committed');
+    assert.equal(events(db).length, 0);
+    assert.ok(logged.mock.callCount() >= 1, 'the failure is logged');
+    await hit(base, page('/c'));
+    healInserts(db);
+    clock.fire(1000);
+    assert.deepEqual(events(db).map((e) => e.path), ['/a', '/b', '/c'], 'rows leave the queue only after commit, in order');
+    assert.equal(flush(), 0);
+  });
+});
+
+test('stop() survives a failed final flush', async (t) => {
+  t.mock.method(console, 'error', () => {});
+  const db = openDb(':memory:');
+  addSite(db, { domain: 'example.com', createdAt: Date.now() });
+  const ctx = await boot({ db });
+  await hit(ctx.base, page('/last'));
+  failInserts(db);
+  assert.doesNotThrow(() => ctx.stop());
+  healInserts(db);
+  ctx.stop();
+  assert.equal(events(db).length, 1, 'a later flush still writes the kept row');
+  await ctx.close();
+});
+
+test('while SQLite keeps failing, the queue stays capped and keeps the newest hits', (t) => {
+  t.mock.method(console, 'error', () => {});
+  const db = openDb(':memory:');
+  const clock = fakeClock();
+  addSite(db, { domain: 'example.com', createdAt: clock.now() });
+  const collector = createCollector({ db, clock, salts: createSaltStore(db, clock) });
+  const res = { set () { return this; }, status () { return this; }, end () { return this; } };
+  const send = (p) => collector.handler({
+    method: 'POST',
+    body: JSON.stringify(page(p)),
+    headers: { 'user-agent': CHROME_UA, 'accept-language': 'en' },
+    socket: { remoteAddress: '203.0.113.9' }
+  }, res);
+  failInserts(db);
+  for (let i = 0; i < MAX_QUEUE + 5; i++) send(`/p${i}`);
+  assert.equal(collector.size, MAX_QUEUE);
+  healInserts(db);
+  assert.equal(collector.flush(), MAX_QUEUE);
+  const paths = events(db).map((e) => e.path);
+  assert.equal(paths[0], '/p5', 'the oldest hits are the ones dropped');
+  assert.equal(paths.at(-1), `/p${MAX_QUEUE + 4}`);
+});
+
+test('a throwing salt rotation or prune is logged and does not escape the timer', async (t) => {
+  const logged = t.mock.method(console, 'error', () => {});
+  const clock = fakeClock();
+  await withSite({ clock, retentionDays: 30 }, async ({ db, salts, start }) => {
+    start();
+    const realRotate = salts.rotate;
+    salts.rotate = () => { throw new Error('SQLITE_BUSY'); };
+    assert.doesNotThrow(() => clock.fire(60_000));
+    salts.rotate = realRotate;
+    const realPrepare = db.prepare;
+    db.prepare = () => { throw new Error('SQLITE_FULL'); };
+    try {
+      assert.doesNotThrow(() => clock.fire(24 * 3600_000));
+    } finally {
+      db.prepare = realPrepare;
+    }
+    assert.equal(logged.mock.callCount(), 2);
+  });
 });
 
 test('with a retention period, older events are pruned and newer ones kept', async () => {

@@ -82,13 +82,23 @@ export function createApp({
 
   const prune = () => (retentionDays ? pruneEvents(db, { days: retentionDays, now: clock.now() }) : 0);
 
+  // A throw from a timer callback is an uncaught exception that kills the
+  // process, so each background job logs its failure and tries again next tick.
+  const guarded = (name, fn) => () => {
+    try {
+      fn();
+    } catch (err) {
+      console.error(`analytics: ${name} failed:`, err);
+    }
+  };
+
   const timers = [];
   function start() {
     timers.push(clock.setInterval(() => collector.flush(), FLUSH_MS));
-    timers.push(clock.setInterval(() => salts.rotate(), SALT_CHECK_MS));
+    timers.push(clock.setInterval(guarded('salt rotation', () => salts.rotate()), SALT_CHECK_MS));
     if (retentionDays) {
       prune();
-      timers.push(clock.setInterval(prune, PRUNE_MS));
+      timers.push(clock.setInterval(guarded('pruning', prune), PRUNE_MS));
     }
   }
   function stop() {

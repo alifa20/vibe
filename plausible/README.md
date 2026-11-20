@@ -50,7 +50,7 @@ Everything lives in `.env` (gitignored). `.env.example` is the annotated copy.
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `ADMIN_PASSWORD` | none, required | The dashboard password, at least 12 characters. It also signs the session cookie, so changing it signs you out everywhere. |
+| `ADMIN_PASSWORD` | none, required | The dashboard password, at least 12 characters; the server refuses to start without one or with a `change-me...` placeholder. It also signs the session cookie, so changing it signs you out everywhere. |
 | `PORT` | `8000` | Port to listen on. |
 | `HOST` | `127.0.0.1` | Bind address. Keep it on loopback when a proxy on the same host forwards to it. |
 | `TRUST_PROXY` | unset | Set to `1` when a reverse proxy is in front. Only then is `X-Forwarded-For` used as the visitor's IP and `CF-IPCountry` read for the country. Unset, both headers are ignored, so nobody can send a fake address. |
@@ -100,7 +100,11 @@ Everything else is reduced before it's stored:
 
 **The salt** is 32 random bytes, made fresh for each UTC day. It's kept in
 memory and in one database row, so a mid-day restart keeps counting the same
-visitors. At UTC midnight a new salt replaces it and the old one is deleted.
+visitors. At UTC midnight a new salt replaces it and the old one is deleted:
+SQLite's `secure_delete` zeroes its bytes, and a WAL checkpoint then clears the
+old copies out of the `-wal` file. (If another process is reading the database
+at that moment, the checkpoint can't empty the WAL; its old frames are
+overwritten as later writes and checkpoints reuse the file.)
 After that, a stored hash can't be matched to anyone, because the input that
 produced it no longer exists. The cost is that one person visiting on two days
 counts as two visitors.
