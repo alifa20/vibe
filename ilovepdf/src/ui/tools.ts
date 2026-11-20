@@ -3,7 +3,8 @@
 import type { QpdfRunner } from "../ops/compress.ts";
 import type { NamedFile } from "../ops/images.ts";
 import type { PageEdit } from "../ops/pages.ts";
-import type { Progress, Rasterizer } from "../ops/types.ts";
+import type { PageRange } from "../ops/ranges.ts";
+import type { ImageFormat, Progress, Rasterizer } from "../ops/types.ts";
 
 export type ToolId = "merge" | "split" | "organise" | "images" | "topng" | "compress";
 
@@ -30,7 +31,7 @@ export const TOOLS: ToolInfo[] = [
 export interface Options {
   splitMode: "ranges" | "every";
   ranges: string;
-  imageFormat: "png" | "jpeg";
+  imageFormat: ImageFormat;
   dpi: 72 | 150 | 300;
   compressMode: "lossless" | "rasterise";
   rasterPreset: "balanced" | "strong";
@@ -90,12 +91,10 @@ export async function runTool(id: ToolId, input: RunInput, engines: Engines): Pr
         const parts = await splitEveryPage(first.bytes);
         return { files: parts.map((bytes, i) => ({ name: `${base}-page-${i + 1}.pdf`, bytes })), zipName: `${base}-pages.zip` };
       }
-      const { parseRanges } = await import("../ops/ranges.ts");
       const parts = await splitPdf(first.bytes, opts.ranges);
-      const ranges = parseRanges(opts.ranges, first.pageCount ?? parts.length);
-      const label = (i: number) => (ranges[i].start === ranges[i].end ? `${ranges[i].start}` : `${ranges[i].start}-${ranges[i].end}`);
+      const label = ({ start, end }: PageRange) => (start === end ? `${start}` : `${start}-${end}`);
       return {
-        files: parts.map((bytes, i) => ({ name: `${base}-pages-${label(i)}.pdf`, bytes })),
+        files: parts.map(({ range, bytes }) => ({ name: `${base}-pages-${label(range)}.pdf`, bytes })),
         zipName: `${base}-split.zip`,
       };
     }

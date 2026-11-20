@@ -1,6 +1,7 @@
 import "./style.css";
 import type { PageEdit } from "./ops/pages.ts";
 import { parseRanges } from "./ops/ranges.ts";
+import { looksLikePdf } from "./ops/sniff.ts";
 import type { Rasterizer } from "./ops/types.ts";
 import type { PdfjsModule, PreviewDoc } from "./render.ts";
 import { h } from "./ui/dom.ts";
@@ -162,7 +163,7 @@ async function readOne(tool: ToolInfo, s: ToolState, item: FileItem, file: File)
       if (!detectImageType(bytes)) return fail(`${file.name}: this is not a JPEG, PNG or WebP image.`);
       Object.assign(item, { status: "ready", bytes });
     } else {
-      if (!isPdfName(file) && !new TextDecoder("latin1").decode(bytes.subarray(0, 1024)).includes("%PDF-")) {
+      if (!isPdfName(file) && !looksLikePdf(bytes)) {
         return fail(`${file.name}: this file is not a PDF.`);
       }
       const { IntakeCancelled, readPdfFile } = await import("./ui/intake.ts");
@@ -569,7 +570,7 @@ function render(): void {
   const sortable = tool.multiple && s.files.length > 1 && !s.running;
 
   runButton = h("button", { type: "button", class: "btn primary run", "data-key": "run", onclick: () => void run() },
-    s.running ? "Working…" : current === "compress" && s.options.compressMode === "rasterise" ? "Rasterise and compress" : tool.runLabel);
+    s.running ? "Working…" : tool.id === "compress" && s.options.compressMode === "rasterise" ? "Rasterise and compress" : tool.runLabel);
   runHint = h("p", { class: "hint run-hint" });
   progressEl = s.running ? h("progress", { class: "progress", "aria-label": "Progress" }) : null;
 

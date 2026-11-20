@@ -1,5 +1,5 @@
 import { PDFDocument } from "@cantoo/pdf-lib";
-import { openPdf } from "./load.ts";
+import { appendPages, openPdf } from "./load.ts";
 import type { PdfSource } from "./types.ts";
 
 /** Join every page of every input, in the order given, into one unencrypted PDF. */
@@ -8,8 +8,7 @@ export async function mergePdfs(inputs: PdfSource[]): Promise<Uint8Array> {
   const out = await PDFDocument.create();
   for (const input of inputs) {
     const doc = await openPdf(input);
-    const pages = await out.copyPages(doc, doc.getPageIndices());
-    for (const page of pages) out.addPage(page);
+    await appendPages(out, doc, doc.getPageIndices());
   }
   return out.save();
 }

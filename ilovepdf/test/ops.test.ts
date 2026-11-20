@@ -23,8 +23,9 @@ describe("splitPdf", () => {
   it("splits 1-2,5 from a 5-page PDF into documents of 2 and 1 pages", async () => {
     const parts = await splitPdf(await makePdf(5), "1-2,5");
     expect(parts).toHaveLength(2);
-    expect(await pageWidths(parts[0])).toEqual([100, 101]);
-    expect(await pageWidths(parts[1])).toEqual([104]);
+    expect(parts.map((p) => p.range)).toEqual([{ start: 1, end: 2 }, { start: 5, end: 5 }]);
+    expect(await pageWidths(parts[0].bytes)).toEqual([100, 101]);
+    expect(await pageWidths(parts[1].bytes)).toEqual([104]);
   });
 
   it("passes range errors through", async () => {

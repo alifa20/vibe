@@ -6,6 +6,8 @@ import { h } from "./dom.ts";
 
 const THUMB_CSS_WIDTH = 132;
 
+const unchangedPages = (count: number): PageEdit[] => Array.from({ length: count }, (_, from) => ({ from, rotate: 0 }));
+
 export class PageGrid {
   readonly el: HTMLOListElement;
   pages: PageEdit[];
@@ -21,7 +23,7 @@ export class PageGrid {
   constructor(doc: PreviewDoc, onChange: (pages: PageEdit[]) => void) {
     this.doc = doc;
     this.onChange = onChange;
-    this.pages = Array.from({ length: doc.numPages }, (_, from) => ({ from, rotate: 0 }));
+    this.pages = unchangedPages(doc.numPages);
     this.el = h("ol", { class: "page-grid", "aria-label": "Pages. Drag a page to move it." });
     this.observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
@@ -34,7 +36,7 @@ export class PageGrid {
   }
 
   reset(): void {
-    this.pages = Array.from({ length: this.doc.numPages }, (_, from) => ({ from, rotate: 0 }));
+    this.pages = unchangedPages(this.doc.numPages);
     this.changed();
   }
 

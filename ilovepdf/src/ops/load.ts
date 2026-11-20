@@ -1,4 +1,5 @@
 import { PDFArray, PDFDict, PDFDocument, PDFObject, PDFRef, PDFStream } from "@cantoo/pdf-lib";
+import { looksLikePdf } from "./sniff.ts";
 import type { PdfSource } from "./types.ts";
 
 /** The file is encrypted and no password was given. */
@@ -24,12 +25,6 @@ export class NotAPdfError extends Error {
 
 export const sourceBytes = (src: PdfSource): Uint8Array => (src instanceof Uint8Array ? src : src.bytes);
 const sourcePassword = (src: PdfSource): string | undefined => (src instanceof Uint8Array ? undefined : src.password);
-
-/** A PDF starts with `%PDF-`, allowing some junk before it as readers do. */
-export function looksLikePdf(bytes: Uint8Array): boolean {
-  const head = new TextDecoder("latin1").decode(bytes.subarray(0, 1024));
-  return head.includes("%PDF-");
-}
 
 // pdf-lib's errors are compiled to ES5 classes, so `instanceof` on them is unreliable: match messages.
 const isWrongPassword = (e: unknown) => e instanceof Error && /password incorrect|needs password/i.test(e.message);
@@ -68,6 +63,11 @@ async function loadWith(bytes: Uint8Array, password: string | undefined): Promis
     if (isEncrypted(e) || isWrongPassword(e)) throw e;
     throw new NotAPdfError(`This file could not be read as a PDF (${e instanceof Error ? e.message : String(e)}).`);
   }
+}
+
+/** Append pages `indices` (0-based) of `from` to the end of `to`. */
+export async function appendPages(to: PDFDocument, from: PDFDocument, indices: number[]): Promise<void> {
+  for (const page of await to.copyPages(from, indices)) to.addPage(page);
 }
 
 /**
