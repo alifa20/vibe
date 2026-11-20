@@ -157,6 +157,11 @@ const MIGRATIONS = [
       END;
     `,
   },
+  {
+    version: 2,
+    name: 'index invoices by client',
+    sql: 'CREATE INDEX idx_invoices_client ON invoices (client_id);',
+  },
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.at(-1).version;

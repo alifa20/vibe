@@ -55,8 +55,13 @@ export function openDb(file) {
 /** UTC day key, "YYYY-MM-DD". Days are UTC everywhere in this app. */
 export const dayKey = (ms) => new Date(ms).toISOString().slice(0, 10);
 
-export const siteByDomain = (db, domain) =>
-  db.prepare('SELECT * FROM sites WHERE domain = ?').get(domain);
+// Prepared once per connection: this runs on every /api/event hit.
+const siteByDomainStmts = new WeakMap();
+export function siteByDomain(db, domain) {
+  let stmt = siteByDomainStmts.get(db);
+  if (!stmt) siteByDomainStmts.set(db, stmt = db.prepare('SELECT * FROM sites WHERE domain = ?'));
+  return stmt.get(domain);
+}
 
 export const listSites = (db) =>
   db.prepare('SELECT * FROM sites ORDER BY domain').all();

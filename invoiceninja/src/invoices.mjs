@@ -87,11 +87,23 @@ export function createInvoice(db, { client_id, currency, notes = '', due_date = 
   );
 }
 
+/** Throws unless the invoice is still a draft; returns it otherwise. */
+export function assertDraft(inv) {
+  if (inv.status !== 'draft') throw new InvoiceError('This invoice has been sent and can no longer be edited.');
+  return inv;
+}
+
 function requireDraft(db, id) {
   const inv = db.prepare('SELECT * FROM invoices WHERE id = ?').get(id);
   if (!inv) throw new InvoiceError('No such invoice.', 404);
-  if (inv.status !== 'draft') throw new InvoiceError('This invoice has been sent and can no longer be edited.');
-  return inv;
+  return assertDraft(inv);
+}
+
+/** The invoice's status, or a 404 when there is no such invoice. */
+function statusOf(db, id) {
+  const inv = db.prepare('SELECT status FROM invoices WHERE id = ?').get(id);
+  if (!inv) throw new InvoiceError('No such invoice.', 404);
+  return inv.status;
 }
 
 export function updateDraft(db, id, { client_id, currency, notes = '', due_date = null }, now) {
@@ -231,19 +243,16 @@ export function sendInvoice(db, id, now) {
 
 /** Full payment only: one paid date and an optional method. */
 export function recordPayment(db, id, { paid_date, payment_method = '' }, now) {
-  const inv = db.prepare('SELECT status FROM invoices WHERE id = ?').get(id);
-  if (!inv) throw new InvoiceError('No such invoice.', 404);
-  if (inv.status !== 'sent') throw new InvoiceError('Only a sent invoice can be marked paid.');
+  if (statusOf(db, id) !== 'sent') throw new InvoiceError('Only a sent invoice can be marked paid.');
   db.prepare(
     "UPDATE invoices SET status = 'paid', paid_date = ?, payment_method = ?, updated_at = ? WHERE id = ?"
   ).run(paid_date, payment_method, iso(now), id);
 }
 
 export function voidInvoice(db, id, now) {
-  const inv = db.prepare('SELECT status FROM invoices WHERE id = ?').get(id);
-  if (!inv) throw new InvoiceError('No such invoice.', 404);
-  if (inv.status !== 'sent' && inv.status !== 'paid') {
-    throw new InvoiceError(inv.status === 'draft' ? 'A draft can be deleted instead.' : 'This invoice is already void.');
+  const status = statusOf(db, id);
+  if (status !== 'sent' && status !== 'paid') {
+    throw new InvoiceError(status === 'draft' ? 'A draft can be deleted instead.' : 'This invoice is already void.');
   }
   db.prepare("UPDATE invoices SET status = 'void', voided_at = ?, updated_at = ? WHERE id = ?").run(iso(now), iso(now), id);
 }
@@ -270,12 +279,25 @@ export function listInvoices(db, { status } = {}) {
       `SELECT i.*, c.name AS current_client_name,
          (SELECT COUNT(*) FROM invoice_lines l WHERE l.invoice_id = i.id) AS line_count
        FROM invoices i JOIN clients c ON c.id = i.client_id
+       ${status ? 'WHERE i.status = @status' : ''}
        ORDER BY CASE i.status WHEN 'draft' THEN 0 WHEN 'sent' THEN 1 WHEN 'paid' THEN 2 ELSE 3 END,
                 i.issue_date DESC, i.id DESC`
     )
+    .all(status ? { status } : {});
+  if (!rows.some((r) => r.status === 'draft')) return rows;
+  // Drafts have no stored total, so compute it from all draft lines, fetched in one query.
+  const draftLines = new Map();
+  const lines = db
+    .prepare(
+      `SELECT l.* FROM invoice_lines l JOIN invoices i ON i.id = l.invoice_id
+       WHERE i.status = 'draft' ORDER BY l.invoice_id, l.position, l.id`
+    )
     .all();
-  const withTotals = rows.map((r) => (r.status === 'draft' ? { ...r, total: computeTotals(getLines(db, r.id)).total } : r));
-  return status ? withTotals.filter((r) => r.status === status) : withTotals;
+  for (const line of lines) {
+    if (!draftLines.has(line.invoice_id)) draftLines.set(line.invoice_id, []);
+    draftLines.get(line.invoice_id).push(line);
+  }
+  return rows.map((r) => (r.status === 'draft' ? { ...r, total: computeTotals(draftLines.get(r.id) ?? []).total } : r));
 }
 
 /**

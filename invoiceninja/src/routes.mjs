@@ -53,10 +53,6 @@ export function adminRoutes({ db, clock }) {
     if (!found) throw new inv.InvoiceError('No such invoice.', 404);
     return found;
   };
-  const requireDraft = (found) => {
-    if (found.status !== 'draft') throw new inv.InvoiceError('This invoice has been sent and can no longer be edited.');
-    return found;
-  };
 
   /* dashboard */
   r.get('/', (req, res) => {
@@ -129,7 +125,7 @@ export function adminRoutes({ db, clock }) {
     html(res, views.invoiceViewPage({ inv: found, today: today() }));
   });
   r.post('/invoices/:id', (req, res) => {
-    const found = requireDraft(load(req));
+    const found = inv.assertDraft(load(req));
     const v = validateInvoice(req.body ?? {}, clientIds());
     if (!v.ok) {
       return html(res, views.invoiceEditPage({ inv: found, clients: inv.listClients(db), header: v.values, headerErrors: v.errors }), 400);
@@ -140,7 +136,7 @@ export function adminRoutes({ db, clock }) {
 
   /* lines */
   r.post('/invoices/:id/lines', (req, res) => {
-    const found = requireDraft(load(req));
+    const found = inv.assertDraft(load(req));
     const v = validateLine(req.body ?? {}, found.currency);
     if (!v.ok) {
       return html(res, views.invoiceEditPage({ inv: found, clients: inv.listClients(db), line: v.raw, lineErrors: v.errors }), 400);
@@ -154,12 +150,12 @@ export function adminRoutes({ db, clock }) {
     return line;
   };
   r.get('/invoices/:id/lines/:lineId/edit', (req, res) => {
-    const found = requireDraft(load(req));
+    const found = inv.assertDraft(load(req));
     const line = findLine(found, req);
     html(res, views.lineEditPage({ inv: found, lineId: line.id, raw: views.lineToRaw(line, found.currency) }));
   });
   r.post('/invoices/:id/lines/:lineId', (req, res) => {
-    const found = requireDraft(load(req));
+    const found = inv.assertDraft(load(req));
     const line = findLine(found, req);
     const v = validateLine(req.body ?? {}, found.currency);
     if (!v.ok) return html(res, views.lineEditPage({ inv: found, lineId: line.id, raw: v.raw, errors: v.errors }), 400);
@@ -167,7 +163,7 @@ export function adminRoutes({ db, clock }) {
     res.redirect(303, `/invoices/${found.id}`);
   });
   r.post('/invoices/:id/lines/:lineId/delete', (req, res) => {
-    const found = requireDraft(load(req));
+    const found = inv.assertDraft(load(req));
     inv.deleteLine(db, found.id, findLine(found, req).id);
     res.redirect(303, `/invoices/${found.id}`);
   });

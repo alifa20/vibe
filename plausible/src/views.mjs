@@ -3,6 +3,7 @@
  * referrers, UTM values, typed-in domains) goes through escapeHtml. No page
  * carries a script or a style attribute; the CSS is /app.css.
  */
+import { BREAKDOWNS, RANGE_PRESETS } from './reports.mjs';
 
 export function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -89,11 +90,9 @@ export function sitesPage({ sites, today, form = {} }) {
   return layout('Sites', body, { signedIn: true });
 }
 
-const RANGE_LABELS = { today: 'Today', '7d': '7 days', '30d': '30 days' };
-
 function rangeControls(domain, range) {
   const base = `/sites/${encodeURIComponent(domain)}`;
-  const chips = Object.entries(RANGE_LABELS).map(([key, label]) =>
+  const chips = RANGE_PRESETS.map(({ key, label }) =>
     `<a class="chip" href="${base}?range=${key}"${range.preset === key ? ' aria-current="true"' : ''}>${label}</a>`).join('');
   return `<div class="filters">
     ${chips}
@@ -107,21 +106,10 @@ function rangeControls(domain, range) {
   </div>`;
 }
 
-const BREAKDOWN_HEADINGS = {
-  pages: ['Top pages', 'Page'],
-  referrers: ['Referrers', 'Host'],
-  sources: ['UTM sources', 'Source'],
-  campaigns: ['UTM campaigns', 'Campaign'],
-  browsers: ['Browsers', 'Browser'],
-  os: ['Operating systems', 'System'],
-  devices: ['Devices', 'Device']
-};
-
-function breakdown(name, rows) {
-  const [heading, column] = BREAKDOWN_HEADINGS[name];
+function breakdown({ name, heading, label }, rows) {
   const table = rows.length
     ? `<table data-breakdown="${name}">
-      <thead><tr><th>${column}</th><th class="num">Visitors</th><th class="num">Pageviews</th></tr></thead>
+      <thead><tr><th>${label}</th><th class="num">Visitors</th><th class="num">Pageviews</th></tr></thead>
       <tbody>${rows.map((row) => `<tr><td class="key">${escapeHtml(row.key)}</td><td class="num">${fmt(row.visitors)}</td><td class="num">${fmt(row.pageviews)}</td></tr>`).join('')}</tbody>
     </table>`
     : '<p class="empty">None in this range.</p>';
@@ -160,7 +148,7 @@ export function sitePage({ domain, origin, range, flash, hasEvents, totals, char
       ${chart}
     </section>
     <div class="grid">
-      ${['pages', 'referrers', 'sources', 'campaigns', 'browsers', 'os', 'devices'].map((name) => breakdown(name, breakdowns[name])).join('')}
+      ${BREAKDOWNS.map((b) => breakdown(b, breakdowns[b.name])).join('')}
     </div>
     <details class="card">
       <summary>Tracking snippet</summary>

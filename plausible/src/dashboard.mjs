@@ -7,6 +7,7 @@ import { addSite, dayKey, listSites, siteByDomain } from './db.mjs';
 import { sameOriginOnly } from './auth.mjs';
 import { barChart } from './charts.mjs';
 import { loginPage, notFoundPage, sitePage, sitesPage } from './views.mjs';
+import { BREAKDOWNS, RANGE_PRESETS } from './reports.mjs';
 
 const DAY_MS = 86_400_000;
 const MAX_RANGE_DAYS = 366;
@@ -31,17 +32,7 @@ export function normaliseDomain(input) {
   return { domain: value };
 }
 
-const BREAKDOWNS = {
-  pages: 'path',
-  referrers: 'referrer_host',
-  sources: 'utm_source',
-  campaigns: 'utm_campaign',
-  browsers: 'browser',
-  os: 'os',
-  devices: 'device'
-};
-
-const PRESETS = { today: 1, '7d': 7, '30d': 30 };
+const PRESETS = Object.fromEntries(RANGE_PRESETS.map(({ key, days }) => [key, days]));
 const isDay = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && dayKey(Date.parse(`${value}T00:00:00Z`) || 0) === value;
 const addDays = (day, n) => dayKey(Date.parse(`${day}T00:00:00Z`) + n * DAY_MS);
 
@@ -79,7 +70,7 @@ function createQueries(db) {
     SELECT day, COUNT(*) AS pageviews, COUNT(DISTINCT visitor_hash) AS visitors
       FROM events WHERE ${where} GROUP BY day`);
   // A visitor seen on two days is two visitors here too, matching the headline.
-  const breakdowns = Object.fromEntries(Object.entries(BREAKDOWNS).map(([name, column]) => [name, db.prepare(`
+  const breakdowns = Object.fromEntries(BREAKDOWNS.map(({ name, column }) => [name, db.prepare(`
     SELECT ${column} AS key, COUNT(*) AS pageviews, COUNT(DISTINCT day || ':' || visitor_hash) AS visitors
       FROM events WHERE ${where} AND ${column} IS NOT NULL
      GROUP BY ${column} ORDER BY pageviews DESC, key ASC LIMIT ${TOP_N}`)]));
@@ -173,7 +164,7 @@ export function createDashboard({ db, clock, auth, baseUrl = null }) {
       pageviews: acc.pageviews + point.pageviews,
       visitors: acc.visitors + point.visitors
     }), { pageviews: 0, visitors: 0 });
-    const breakdowns = Object.fromEntries(Object.keys(BREAKDOWNS).map((name) => [name, queries.breakdown(name, site.id, range)]));
+    const breakdowns = Object.fromEntries(BREAKDOWNS.map(({ name }) => [name, queries.breakdown(name, site.id, range)]));
 
     return html(res, 200, sitePage({
       domain: site.domain,
