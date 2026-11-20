@@ -11,6 +11,11 @@
 //                                      (an entry with `page`). Links: ../, ../<slug>/, ../favicon.svg.
 //                                      Throws for unknown slugs and for demo entries.
 //
+// Each project has exactly one of: demo (built here, served at /<base>/<slug>/ with the nav
+// strip), page (a server app; gets a project page), or external { url } (a live app hosted in
+// its own repo; the hub card links straight to url, no page is built, and the nav strip
+// leaves it out).
+//
 // Screenshot items: { src, alt, label? }, src relative to the project page (the build copies
 // the files next to it). The screenshot column renders only when the list is non-empty.
 
@@ -49,7 +54,11 @@ export function loadManifest(json) {
     if (!isStr(p.color) || !/^#[0-9a-f]{6}$/i.test(p.color)) bad(`color must be a #rrggbb hex, got ${JSON.stringify(p.color)}`);
     const hasDemo = p.demo !== undefined;
     const hasPage = p.page !== undefined;
-    if (hasDemo === hasPage) bad(`needs exactly one of demo or page (has ${hasDemo ? "both" : "neither"})`);
+    const hasExt = p.external !== undefined;
+    const kinds = hasDemo + hasPage + hasExt;
+    if (kinds !== 1) bad(`needs exactly one of demo, page or external (has ${kinds ? "more than one" : "none"})`);
+    if (hasExt && (!p.external || typeof p.external !== "object" || !isStr(p.external.url) || !/^https:\/\//.test(p.external.url)))
+      bad("external.url must be an https:// URL");
     if (hasDemo) {
       if (!p.demo || typeof p.demo !== "object") bad("demo must be an object");
       if (!isStr(p.demo.out)) bad("demo.out is required when demo is set");
@@ -93,6 +102,8 @@ const BASE_CSS = `
 html,body{margin:0}
 body{min-height:100vh;background-color:var(--bg);background-image:radial-gradient(var(--dots) 1.6px,transparent 1.8px);background-size:20px 20px;color:var(--ink);font:500 16px/1.45 ${SANS};-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
+[hidden]{display:none!important}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 a:focus-visible,button:focus-visible{outline:3px dashed var(--ink);outline-offset:4px}
 .wrap{max-width:1196px;margin:0 auto;padding:30px 48px 44px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:0 0 34px}
@@ -104,6 +115,7 @@ a:focus-visible,button:focus-visible{outline:3px dashed var(--ink);outline-offse
 .foot a{display:inline-flex;align-items:center;min-height:44px;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:5px}
 .num{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:3px solid #121212;background:#fff;color:#121212;font:900 15px/1 ${SANS};margin:0 0 14px}
 .tag{font:700 12px/1.2 ${MONO};background:#fff;color:#121212;border:2px solid #121212;padding:5px 8px}
+.tag.own{border-style:dashed}
 .badge{font:800 13px/1 ${SANS};border:2px solid #121212;border-radius:999px;padding:7px 11px;white-space:nowrap}
 .badge.live{background:#121212;color:var(--c)}
 .badge.srv{background:#fff;color:#121212;border-style:dashed}
@@ -124,6 +136,24 @@ const HUB_CSS = `
 .lede{font:900 42px/1 ${SANS};letter-spacing:-.03em;margin:0 0 12px;max-width:22ch}
 .lede .dash{color:var(--ink-2)}
 .blurb{margin:0;max-width:48ch;color:var(--ink-2);font-size:17px}
+.filter{display:flex;flex-wrap:wrap;align-items:center;gap:14px 12px;margin:0 0 44px}
+.srch{position:relative;display:flex;align-items:center;flex:1 1 320px;max-width:460px;min-height:56px;background:var(--surface);border:3px solid var(--bd);box-shadow:5px 5px 0 var(--sh)}
+.srch:focus-within{outline:3px dashed var(--ink);outline-offset:4px}
+.srch svg{flex:none;margin:0 4px 0 16px}
+.srch input{flex:1;min-width:0;height:50px;padding:0 10px;border:0;background:none;color:var(--ink);font:700 17px/1 ${SANS};outline:none;-webkit-appearance:none;appearance:none}
+.srch input::placeholder{color:var(--ink-2);font:500 15px/1 ${MONO}}
+.srch input::-webkit-search-cancel-button{-webkit-appearance:none}
+.srch kbd{flex:none;margin-right:12px;padding:4px 8px;border:2px solid var(--bd);font:800 12px/1 ${MONO};color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:2px solid var(--bd);border-radius:999px;background:var(--surface);color:var(--ink);box-shadow:3px 3px 0 var(--sh);font:800 14px/1 ${SANS};cursor:pointer;transition:transform .12s,box-shadow .12s}
+.chip:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--sh)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);transform:translate(3px,3px);box-shadow:none}
+.chip .n{font:800 12px/1 ${MONO};opacity:.75}
+.fcount{flex-basis:100%;margin:2px 0 0;font:700 13px/1 ${MONO};color:var(--ink-2)}
+.empty{display:flex;flex-direction:column;align-items:flex-start;gap:22px;margin:0 0 56px}
+.empty p{margin:0;font:900 34px/1.05 ${SANS};letter-spacing:-.03em;max-width:24ch;background:var(--y);color:#121212;border:3px solid var(--bd);box-shadow:8px 8px 0 var(--sh);padding:14px 20px 16px;transform:rotate(-1.5deg)}
+.empty button{min-height:48px;padding:0 20px;border:3px solid var(--bd);background:var(--surface);color:var(--ink);box-shadow:5px 5px 0 var(--sh);font:900 16px/1 ${SANS};cursor:pointer}
+.empty button:active{transform:translate(4px,4px);box-shadow:none}
 .sec{display:flex;align-items:center;gap:12px;margin:0 0 20px}
 .sec h2{font:900 26px/1 ${SANS};letter-spacing:-.02em;margin:0}
 .ct{display:inline-flex;align-items:center;justify-content:center;flex:none;width:34px;height:34px;border-radius:50%;border:3px solid var(--bd);background:var(--surface);font:900 15px/1 ${SANS}}
@@ -142,7 +172,7 @@ const HUB_CSS = `
 .hub-card .d{margin:0 0 18px;font-size:16px;max-width:36ch}
 .hub-card .ft{margin-top:auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-right:26px}
 .arrow{position:absolute;right:16px;bottom:14px;font:900 24px/1 ${SANS}}
-@media (prefers-reduced-motion:reduce){.hub-card:hover,.hub-card:active{transform:none}}
+@media (prefers-reduced-motion:reduce){.hub-card:hover,.hub-card:active,.chip:hover,.chip[aria-pressed="true"],.empty button:active{transform:none}}
 @media (max-width:899.98px){
   .grid.three{grid-template-columns:repeat(2,minmax(0,1fr))}
   .big{font-size:132px}
@@ -161,6 +191,12 @@ const HUB_CSS = `
   .sec h2{font-size:22px}
   .sec p{display:none}
   .arrow{display:none}
+  .filter{margin-bottom:34px}
+  .srch{flex-basis:100%;max-width:none}
+  .srch kbd{display:none}
+  .chips{gap:8px}
+  .chip{padding:0 11px;gap:6px;font-size:13px}
+  .empty p{font-size:26px}
 }
 .nf{display:flex;flex-direction:column;align-items:center;padding:56px 0 84px}
 .nf-sticker{margin:0;text-align:center;background:var(--y);color:#121212;border:4px solid var(--bd);box-shadow:10px 10px 0 var(--sh);transform:rotate(-4deg);padding:26px 44px 32px}
@@ -263,35 +299,53 @@ const footer = (repo) =>
 
 /* ── hub ──────────────────────────────────────────────────────────────── */
 
-const status = (p) => (p.demo ? "live demo" : "needs a server");
+const isLive = (p) => Boolean(p.demo || p.external);
+const status = (p) => (isLive(p) ? "live demo" : "needs a server");
+
+// Search + status chips. Rendered hidden; FILTER_JS reveals it, so without JS the hub is
+// the plain grouped list. State mirrors to ?q=&show= so a filtered view can be shared.
+const filterBar = (nLive, nSrv, total) =>
+  `<form class="filter" role="search" aria-label="filter projects" hidden>` +
+  `<label class="srch"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="3"/><path d="M15 15l6 6" stroke="currentColor" stroke-width="3.5" stroke-linecap="square"/></svg>` +
+  `<span class="vh">search projects</span><input type="search" name="q" placeholder="try sqlite, qr, workers…" autocomplete="off" spellcheck="false"><kbd aria-hidden="true">/</kbd></label>` +
+  `<div class="chips" role="group" aria-label="show">` +
+  `<button type="button" class="chip" data-kind="all" aria-pressed="true">all <span class="n">${total}</span></button>` +
+  `<button type="button" class="chip" data-kind="live" aria-pressed="false"><span aria-hidden="true">▶</span> live demos <span class="n">${nLive}</span></button>` +
+  `<button type="button" class="chip" data-kind="srv" aria-pressed="false">needs a server <span class="n">${nSrv}</span></button></div>` +
+  `<p class="fcount" aria-live="polite"></p></form>`;
+
+const FILTER_JS = `(()=>{const f=document.querySelector(".filter");if(!f)return;const q=f.querySelector("input"),chips=[...f.querySelectorAll(".chip")],items=[...document.querySelectorAll(".grid>li")],secs=[...document.querySelectorAll("section[data-sec]")],out=f.querySelector(".fcount"),empty=document.querySelector(".empty"),total=items.length;let kind="all";const p=new URLSearchParams(location.search);q.value=p.get("q")||"";if(["live","srv"].includes(p.get("show")))kind=p.get("show");f.hidden=false;function apply(){const raw=q.value.trim(),terms=raw.toLowerCase().split(/\\s+/).filter(Boolean);let n=0;for(const li of items){const ok=(kind==="all"||li.dataset.kind===kind)&&terms.every(t=>li.dataset.q.includes(t));li.hidden=!ok;if(ok)n++}for(const s of secs){const v=s.querySelectorAll(".grid>li:not([hidden])").length;s.hidden=!v;s.querySelector(".ct").textContent=v}for(const c of chips)c.setAttribute("aria-pressed",String(c.dataset.kind===kind));out.textContent=n===total?"all "+total+" projects":"showing "+n+" of "+total;empty.hidden=n>0;empty.querySelector(".eq").textContent=raw?"\u201c"+raw+"\u201d":"that";const u=new URL(location.href);raw?u.searchParams.set("q",raw):u.searchParams.delete("q");kind!=="all"?u.searchParams.set("show",kind):u.searchParams.delete("show");history.replaceState(null,"",u)}q.addEventListener("input",apply);for(const c of chips)c.addEventListener("click",()=>{kind=c.dataset.kind;apply()});f.addEventListener("submit",e=>e.preventDefault());empty.querySelector("button").addEventListener("click",()=>{q.value="";kind="all";apply();q.focus()});document.addEventListener("keydown",e=>{const a=document.activeElement,typing=a&&(/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)||a.isContentEditable);if(e.key==="/"&&!typing&&!e.metaKey&&!e.ctrlKey&&!e.altKey){e.preventDefault();q.focus();q.select()}else if(e.key==="Escape"&&a===q&&q.value){q.value="";apply()}});apply()})();`;
 
 function card(p, i) {
-  const badge = p.demo
+  const badge = isLive(p)
     ? `<span class="badge live"><span aria-hidden="true">▶ </span>live demo</span>`
     : `<span class="badge srv">needs a server</span>`;
   const insp = p.inspiredBy
     ? `<span class="insp${i % 2 ? " r" : ""}" aria-hidden="true">inspired by ${esc(p.inspiredBy)}</span>`
     : "";
+  const ext = p.external ? "own repo" : "";
+  const haystack = [p.name, p.slug, p.description, p.stack, p.inspiredBy ?? "", status(p), ext].join(" ").toLowerCase();
+  const href = p.external ? p.external.url : `./${p.slug}/`;
   return (
-    `<li><a class="hub-card c-${esc(p.slug)}" href="./${esc(p.slug)}/" aria-label="${esc(`${p.name}, ${status(p)}, ${p.description}`)}">` +
+    `<li data-kind="${isLive(p) ? "live" : "srv"}" data-q="${esc(haystack)}"><a class="hub-card c-${esc(p.slug)}" href="${esc(href)}" aria-label="${esc(`${p.name}, ${status(p)}${ext ? ", in its own repo" : ""}, ${p.description}`)}">` +
     insp +
     `<span class="num" aria-hidden="true">${num(i)}</span>` +
     `<h3>${esc(p.name)}</h3>` +
     `<p class="d">${esc(p.description)}</p>` +
-    `<span class="ft">${badge}<span class="tag">${esc(p.stack)}</span></span>` +
-    `<span class="arrow" aria-hidden="true">→</span></a></li>`
+    `<span class="ft">${badge}<span class="tag">${esc(p.stack)}</span>${ext ? `<span class="tag own">own repo ↗</span>` : ""}</span>` +
+    `<span class="arrow" aria-hidden="true">${ext ? "↗" : "→"}</span></a></li>`
   );
 }
 
 export function renderHub(manifest) {
   const m = manifest;
   const indexed = m.projects.map((p, i) => [p, i]);
-  const live = indexed.filter(([p]) => p.demo);
-  const srv = indexed.filter(([p]) => !p.demo);
+  const live = indexed.filter(([p]) => isLive(p));
+  const srv = indexed.filter(([p]) => !isLive(p));
   const total = m.projects.length;
   const section = (id, title, explain, list, cols) =>
     list.length
-      ? `<section aria-labelledby="h-${id}"><div class="sec"><span class="ct" aria-hidden="true">${list.length}</span><h2 id="h-${id}">${title}</h2><p>${explain}</p></div>` +
+      ? `<section aria-labelledby="h-${id}" data-sec="${id}"><div class="sec"><span class="ct" aria-hidden="true">${list.length}</span><h2 id="h-${id}">${title}</h2><p>${explain}</p></div>` +
         `<ul class="grid ${cols}">${list.map(([p, i]) => card(p, i)).join("")}</ul></section>`
       : "";
   const blurb =
@@ -304,16 +358,18 @@ export function renderHub(manifest) {
     `<span class="pill-ai">✦ made with ai, by ali</span>` +
     `<p class="lede"><span class="dash">—</span> ${word(total)} things I built with AI.</p>` +
     `<p class="blurb">${blurb}</p></div></div>` +
+    filterBar(live.length, srv.length, total) +
     `<main>` +
     section("live", "live demos", "click and it runs. nothing to install.", live, "two") +
     section("srv", "run it yourself", "each one needs a server. what it does and the commands are inside.", srv, "three") +
+    `<div class="empty" hidden><p>nothing matches <span class="eq"></span>.</p><button type="button">clear the filter</button></div>` +
     `</main>${footer(m.repo)}</div>`;
   return doc({
     title: `vibe — ${word(total)} things I built with AI`,
     description: `ali's vibe log: ${word(total)} small apps built with AI. ${live.length} live demos, ${srv.length} you can run yourself.`,
     icon: "./favicon.svg",
     css: BASE_CSS + HUB_CSS + colourClasses(m),
-    body,
+    body: body + `<script>${FILTER_JS}</script>`,
   });
 }
 

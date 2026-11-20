@@ -25,11 +25,12 @@ test("zcal nav: prev forms, next wraps to teleprompter", () => {
   assert.match(html, /href="\.\.\/teleprompter\/" aria-label="next: teleprompter"/);
 });
 
-test("switcher menu: 8 items in 2 groups, current marked", () => {
+test("switcher menu: the 8 on-site projects in 2 groups, current marked (external ones left out)", () => {
   const html = renderNav(m, "teleprompter");
   const items = [...html.matchAll(/<a class="vibe-item vibe-p-([a-z-]+)"[^>]*href="([^"]+)"([^>]*)>/g)];
   assert.equal(items.length, 8);
-  assert.deepEqual(items.map((i) => i[2]), m.projects.map((p) => `../${p.slug}/`));
+  assert.deepEqual(items.map((i) => i[2]), m.projects.filter((p) => !p.external).map((p) => `../${p.slug}/`));
+  assert.doesNotMatch(html, /myshot/);
   const current = items.filter((i) => /aria-current="page"/.test(i[3]));
   assert.equal(current.length, 1);
   assert.equal(current[0][2], "../teleprompter/");
@@ -44,7 +45,7 @@ test("switcher menu: 8 items in 2 groups, current marked", () => {
 });
 
 test("nav markup has no inline style and no script", () => {
-  for (const p of m.projects) {
+  for (const p of m.projects.filter((p) => !p.external)) {
     const html = renderNav(m, p.slug);
     assert.doesNotMatch(html, /style="/);
     assert.doesNotMatch(html, /<script/);

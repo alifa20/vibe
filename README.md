@@ -1,9 +1,10 @@
 # vibe
 
-Eight small apps I built with AI. Each folder is a self-contained project with
-its own README, stack and setup. Nothing is shared between them.
+Nine small apps I built with AI. Each folder is a self-contained project with
+its own README, stack and setup. Nothing is shared between them. One of them,
+myshot, lives in [its own repo](https://github.com/alifa20/myshot) for now.
 
-**Browse them at <https://alifa20.github.io/vibe/>.** Two run right in the
+**Browse them at <https://alifa20.github.io/vibe/>.** Three run right in the
 browser. The other six need a server, so their page shows what they do and how
 to run them.
 
@@ -17,6 +18,7 @@ to run them.
 | [senja](senja/) | collect, approve and embed testimonials. _(inspired by Senja)_ | express + sqlite | [how to run it](https://alifa20.github.io/vibe/senja/) |
 | [forms](tally/) | a small form builder. responses stay in a sqlite file you control. _(inspired by Tally)_ | express + sqlite | [how to run it](https://alifa20.github.io/vibe/tally/) |
 | [zcal](zcal/) | single-user scheduling: read one calendar, publish your free time, book a slot. _(inspired by Zcal)_ | next.js + sqlite | [how to run it](https://alifa20.github.io/vibe/zcal/) |
+| [myshot](https://github.com/alifa20/myshot) | screenshot beautifier: padding, shadow, background, crop and arrows, exported as a png. _(own repo)_ | one html file, vanilla js | [live app](https://alifa20.github.io/myshot/) |
 
 The names, descriptions and stacks above match `site/projects.json`, which
 drives the site. If you change one, change the other.

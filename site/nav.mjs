@@ -33,8 +33,11 @@ const sha256 = (s) => createHash("sha256").update(s, "utf8").digest("base64");
 export const SANS = '-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif';
 export const MONO = 'ui-monospace,"SF Mono",Menlo,Consolas,monospace';
 
+// Projects hosted in their own repo (external) aren't on this site, so the strip skips them.
+const onSite = (manifest) => manifest.projects.filter((p) => !p.external);
+
 const find = (manifest, slug) => {
-  const i = manifest.projects.findIndex((p) => p.slug === slug);
+  const i = onSite(manifest).findIndex((p) => p.slug === slug);
   if (i < 0) throw new Error(`nav: unknown project slug "${slug}"`);
   return i;
 };
@@ -91,7 +94,7 @@ export const styleHash = (manifest) => sha256(navStyle(manifest));
 
 /** Skip link (optional) + the <nav> strip, for the page at /<base>/<currentSlug>/. */
 export function renderNav(manifest, currentSlug, { skipTarget } = {}) {
-  const ps = manifest.projects;
+  const ps = onSite(manifest);
   const i = find(manifest, currentSlug);
   const cur = ps[i];
   const prev = ps[(i - 1 + ps.length) % ps.length];

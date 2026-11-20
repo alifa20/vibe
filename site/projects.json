@@ -180,6 +180,14 @@
         },
         "screenshots": []
       }
+    },
+    {
+      "slug": "myshot",
+      "name": "myshot",
+      "description": "screenshot beautifier: padding, shadow, background, crop and arrows, exported as a png.",
+      "stack": "one html file, vanilla js",
+      "color": "#9fb4c7",
+      "external": { "url": "https://alifa20.github.io/myshot/" }
     }
   ]
 }

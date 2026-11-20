@@ -72,7 +72,7 @@ export function assemble({ root = resolve(HERE, ".."), outDir, skipBuild = false
           writeFileSync(file, html);
           pages.push(toPosix(relative(tmp, file)));
         }
-      } else {
+      } else if (p.page) {
         write(join(p.slug, "index.html"), renderProjectPage(m, p.slug));
         for (const shot of p.page.screenshots) {
           const from = join(root, p.slug, shot.src);
