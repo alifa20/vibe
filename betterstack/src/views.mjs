@@ -1,5 +1,7 @@
 /** Server-rendered HTML. Every value from outside goes through esc(). No inline styles or scripts. */
 
+import { formatDuration } from './notify.mjs';
+
 export function esc(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -162,26 +164,16 @@ ${incidentTable(incidents, now)}
 ${rows ? `<div class="scroll"><table><thead><tr><th>Time (UTC)</th><th>Result</th><th>Status</th><th>Latency</th><th>Error</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="muted">No checks yet.</p>'}`);
 }
 
-export function incidentTable(incidents, now, { withName = false } = {}) {
-  if (!incidents.length) return '<h2>Incidents</h2><p class="muted">No incidents.</p>';
+export function incidentTable(incidents, now, { withName = false, heading = 'Incidents' } = {}) {
+  const h2 = `<h2>${esc(heading)}</h2>`;
+  if (!incidents.length) return `${h2}<p class="muted">No incidents.</p>`;
   const rows = incidents.map((i) => `<tr>
 ${withName ? `<td><a href="/${i.kind === 'monitor' ? 'monitors' : 'heartbeats'}/${i.ref_id}">${esc(i.name ?? '(deleted)')}</a></td>` : ''}
 <td>${esc(iso(i.started_at))}</td>
 <td>${i.ended_at ? esc(iso(i.ended_at)) : '<span class="badge badge-down">ongoing</span>'}</td>
-<td>${esc(durationText((i.ended_at ?? now) - i.started_at))}</td>
+<td>${esc(formatDuration((i.ended_at ?? now) - i.started_at))}</td>
 <td>${esc(i.cause)}</td></tr>`).join('');
-  return `<h2>Incidents</h2><div class="scroll"><table><thead><tr>${withName ? '<th>Check</th>' : ''}<th>Started (UTC)</th><th>Ended</th><th>Duration</th><th>Cause</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-}
-
-export function durationText(ms) {
-  let s = Math.max(0, Math.round(ms / 1000));
-  const parts = [];
-  for (const [unit, size] of [['d', 86400], ['h', 3600], ['m', 60], ['s', 1]]) {
-    const n = Math.floor(s / size);
-    s -= n * size;
-    if (n) parts.push(`${n}${unit}`);
-  }
-  return parts.slice(0, 2).join(' ') || '0s';
+  return `${h2}<div class="scroll"><table><thead><tr>${withName ? '<th>Check</th>' : ''}<th>Started (UTC)</th><th>Ended</th><th>Duration</th><th>Cause</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 export function scheduleText(hb) {
@@ -217,7 +209,7 @@ ${summaryCard('up', count('up'))}${summaryCard('down', count('down'))}${summaryC
 ${monitorRows ? `<div class="scroll"><table><thead><tr><th>Name</th><th>State</th><th>Last check</th><th>Uptime 24h</th><th>Latency</th></tr></thead><tbody>${monitorRows}</tbody></table></div>` : '<p class="muted">No monitors yet. <a href="/monitors/new">Add one</a>.</p>'}
 <h2>Heartbeats</h2>
 ${heartbeatRows ? `<div class="scroll"><table><thead><tr><th>Name</th><th>State</th><th>Last ping</th><th>Next expected</th></tr></thead><tbody>${heartbeatRows}</tbody></table></div>` : '<p class="muted">No heartbeats yet. <a href="/heartbeats/new">Add one</a>.</p>'}
-${incidentTable(incidents, now, { withName: true }).replace('<h2>Incidents</h2>', '<h2>Recent incidents</h2>')}`);
+${incidentTable(incidents, now, { withName: true, heading: 'Recent incidents' })}`);
 }
 
 export function heartbeatForm({ title, action, values = {}, errors = {} }) {
@@ -242,11 +234,11 @@ ${field({ name: 'grace_min', label: 'Grace period (minutes)', value: v.grace_min
 
 export function heartbeatDetail({ hb, pings, incidents, pingBase, now }) {
   const url = `${pingBase}/ping/${hb.token}`;
-  const rows = pings.map((p) => `<tr><td>${esc(iso(p.ts))}</td><td>${esc(p.kind)}</td><td>${p.duration_ms === null ? '' : esc(durationText(p.duration_ms))}</td></tr>`).join('');
+  const rows = pings.map((p) => `<tr><td>${esc(iso(p.ts))}</td><td>${esc(p.kind)}</td><td>${p.duration_ms === null ? '' : esc(formatDuration(p.duration_ms))}</td></tr>`).join('');
   return layout(hb.name, `<h1>${esc(hb.name)} ${stateBadge(hb.paused ? 'paused' : hb.state)}</h1>
 <div class="card">
 <p>${esc(scheduleText(hb))}, ${esc(Math.round(hb.grace_s / 60))} minutes grace.
-Last ping: ${esc(ago(hb.last_ping_at, now))}${hb.last_duration_ms !== null ? ` (ran for ${esc(durationText(hb.last_duration_ms))})` : ''}.
+Last ping: ${esc(ago(hb.last_ping_at, now))}${hb.last_duration_ms !== null ? ` (ran for ${esc(formatDuration(hb.last_duration_ms))})` : ''}.
 ${hb.state !== 'new' && !hb.paused ? `Next expected: ${esc(iso(hb.due_at))} UTC.` : ''}</p>
 <p><strong>Ping URLs</strong> (GET or POST, no login needed):</p>
 <pre>${esc(url)}          success

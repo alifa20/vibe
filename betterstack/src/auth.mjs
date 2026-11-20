@@ -7,16 +7,6 @@ const LOCK_MS = 15 * 60 * 1000;
 
 const sha256 = (s) => createHash('sha256').update(String(s)).digest();
 
-function equalHex(a, b) {
-  const bufA = Buffer.from(String(a), 'utf8');
-  const bufB = Buffer.from(String(b), 'utf8');
-  if (bufA.length !== bufB.length) {
-    timingSafeEqual(bufA, bufA);
-    return false;
-  }
-  return timingSafeEqual(bufA, bufB);
-}
-
 export function parseCookies(header = '') {
   const out = {};
   for (const part of String(header).split(';')) {
@@ -47,7 +37,7 @@ export function createAuth({ password, clock = { now: () => Date.now() } }) {
     if (!value) return false;
     const [expiry, signature] = value.split('.');
     if (!signature || !(Number(expiry) > clock.now())) return false;
-    return equalHex(signature, sign(expiry));
+    return timingSafeEqual(sha256(signature), sha256(sign(expiry)));
   }
 
   function cookie(req, value, maxAgeSeconds) {
@@ -78,6 +68,10 @@ export function createAuth({ password, clock = { now: () => Date.now() } }) {
         const rec = failures.get(ip);
         const n = rec && rec.until > clock.now() ? rec.n + 1 : 1;
         failures.set(ip, { n, until: clock.now() + LOCK_MS });
+        if (failures.size > 10_000) {
+          const now = clock.now();
+          for (const [key, value] of failures) if (value.until <= now) failures.delete(key);
+        }
         return { ok: false, lockedMs: lockedFor(ip) };
       }
       failures.delete(ip);

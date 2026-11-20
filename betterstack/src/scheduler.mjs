@@ -1,6 +1,6 @@
 import { closeIncident, openIncident } from './db.mjs';
 import { runHttpCheck } from './checks.mjs';
-import { getMonitor, listMonitors, recordCheck } from './monitors.mjs';
+import { createCheckRecorder, getMonitor, listMonitors } from './monitors.mjs';
 
 /**
  * The monitor state machine. Pure: given the stored monitor and one check
@@ -61,6 +61,12 @@ export function createScheduler({
   const pending = new Set();
   let stopped = true;
 
+  // Statements for the check cycle, prepared once.
+  const recordCheck = createCheckRecorder(db);
+  const saveResult = db.prepare(`UPDATE monitors SET state = @state, fail_streak = @fail_streak, ok_streak = @ok_streak,
+    fail_since = @fail_since, last_checked_at = @now, last_status = @status, last_latency_ms = @latency,
+    last_error = @error, next_check_at = @nextCheckAt WHERE id = @id`);
+
   // Up to 60s of spread for overdue monitors at startup, so a restart does
   // not fire every check at the same instant.
   const startupSpread = (m) => Math.floor(random() * Math.min(m.interval_s * 1000, 60_000));
@@ -120,10 +126,8 @@ export function createScheduler({
     let closed = null;
 
     db.transaction(() => {
-      recordCheck(db, id, now, result);
-      db.prepare(`UPDATE monitors SET state = @state, fail_streak = @fail_streak, ok_streak = @ok_streak,
-        fail_since = @fail_since, last_checked_at = @now, last_status = @status, last_latency_ms = @latency,
-        last_error = @error, next_check_at = @nextCheckAt WHERE id = @id`).run({
+      recordCheck(id, now, result);
+      saveResult.run({
         state: next.state ?? m.state,
         fail_streak: next.fail_streak,
         ok_streak: next.ok_streak,

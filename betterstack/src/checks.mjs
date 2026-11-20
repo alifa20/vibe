@@ -29,7 +29,8 @@ export function statusMatches(status, expected) {
   return Boolean(ranges && ranges.some(([lo, hi]) => status >= lo && status <= hi));
 }
 
-function intField(raw, { min, max, label, errors, key }) {
+/** Parses a whole number in [min, max]; on failure records a message in errors[key] and returns null. */
+export function intField(raw, { min, max, label, errors, key }) {
   const text = String(raw ?? '').trim();
   if (!/^\d+$/.test(text)) {
     errors[key] = `${label} must be a whole number.`;

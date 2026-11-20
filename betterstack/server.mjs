@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './src/env.mjs';
 import { openDb } from './src/db.mjs';
 import { createApp } from './src/app.mjs';
 import { createNotifier, smtpFromEnv } from './src/notify.mjs';
@@ -13,16 +13,17 @@ if (!env.ADMIN_PASSWORD || env.ADMIN_PASSWORD.length < 12) {
 }
 
 const db = openDb(env.DB_PATH || './data/uptime.db');
+const baseUrl = (env.BASE_URL || '').trim();
 const notifier = createNotifier({
   smtp: smtpFromEnv(env),
   to: (env.ALERT_EMAIL_TO || '').trim(),
-  baseUrl: (env.BASE_URL || '').trim(),
+  baseUrl,
 });
 const uptime = createApp({
   db,
   adminPassword: env.ADMIN_PASSWORD,
   notifier,
-  baseUrl: (env.BASE_URL || '').trim(),
+  baseUrl,
   trustProxy: (env.TRUST_PROXY || '').trim(),
 });
 

@@ -47,12 +47,19 @@ export function deleteMonitor(db, id) {
   })();
 }
 
-export function recordCheck(db, monitorId, ts, result) {
-  db.prepare('INSERT INTO checks (monitor_id, ts, ok, status_code, latency_ms, error) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(monitorId, ts, result.ok ? 1 : 0, result.status, result.latencyMs, result.error);
-  const cutoff = db.prepare('SELECT id FROM checks WHERE monitor_id = ? ORDER BY id DESC LIMIT 1 OFFSET ?')
-    .get(monitorId, CHECKS_KEPT_PER_MONITOR);
-  if (cutoff) db.prepare('DELETE FROM checks WHERE monitor_id = ? AND id <= ?').run(monitorId, cutoff.id);
+/**
+ * Returns recordCheck(monitorId, ts, result), which stores one check and keeps
+ * the latest CHECKS_KEPT_PER_MONITOR per monitor. Statements are prepared once.
+ */
+export function createCheckRecorder(db) {
+  const insert = db.prepare('INSERT INTO checks (monitor_id, ts, ok, status_code, latency_ms, error) VALUES (?, ?, ?, ?, ?, ?)');
+  const cutoffRow = db.prepare('SELECT id FROM checks WHERE monitor_id = ? ORDER BY id DESC LIMIT 1 OFFSET ?');
+  const trim = db.prepare('DELETE FROM checks WHERE monitor_id = ? AND id <= ?');
+  return function recordCheck(monitorId, ts, result) {
+    insert.run(monitorId, ts, result.ok ? 1 : 0, result.status, result.latencyMs, result.error);
+    const cutoff = cutoffRow.get(monitorId, CHECKS_KEPT_PER_MONITOR);
+    if (cutoff) trim.run(monitorId, cutoff.id);
+  };
 }
 
 export const recentChecks = (db, monitorId, limit = 50) =>

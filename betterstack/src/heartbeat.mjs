@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Cron } from 'croner';
+import { intField } from './checks.mjs';
 import { closeIncident, deleteIncidents, openIncident } from './db.mjs';
 
 /**
@@ -38,20 +39,6 @@ export function computeDueAt(hb, fromMs) {
   return next ? next.getTime() : null;
 }
 
-function wholeNumber(raw, { min, max, label }, errors, key) {
-  const text = String(raw ?? '').trim();
-  if (!/^\d+$/.test(text)) {
-    errors[key] = `${label} must be a whole number.`;
-    return null;
-  }
-  const n = Number(text);
-  if (n < min || n > max) {
-    errors[key] = `${label} must be between ${min} and ${max}.`;
-    return null;
-  }
-  return n;
-}
-
 /** Validates the heartbeat form. Period and grace are entered in minutes. */
 export function validateHeartbeat(input) {
   const errors = {};
@@ -63,7 +50,7 @@ export function validateHeartbeat(input) {
   const values = { name, mode, period_s: null, cron: null, tz: null, grace_s: null };
 
   if (mode === 'period') {
-    const minutes = wholeNumber(input.period_min, { min: 1, max: 60 * 24 * 31, label: 'Period' }, errors, 'period_min');
+    const minutes = intField(input.period_min, { min: 1, max: 60 * 24 * 31, label: 'Period', errors, key: 'period_min' });
     if (minutes !== null) values.period_s = minutes * 60;
   } else if (mode === 'cron') {
     const cron = String(input.cron ?? '').trim().replace(/\s+/g, ' ');
@@ -84,7 +71,7 @@ export function validateHeartbeat(input) {
     errors.mode = 'Choose a fixed period or a cron schedule.';
   }
 
-  const grace = wholeNumber(input.grace_min, { min: 1, max: 60 * 24 * 7, label: 'Grace period' }, errors, 'grace_min');
+  const grace = intField(input.grace_min, { min: 1, max: 60 * 24 * 7, label: 'Grace period', errors, key: 'grace_min' });
   if (grace !== null) values.grace_s = grace * 60;
 
   return { values, errors };
@@ -111,8 +98,20 @@ export function createHeartbeats({
   let handle = null;
   let running = false;
 
-  const get = (id) => db.prepare('SELECT * FROM heartbeats WHERE id = ?').get(id);
-  const byToken = (token) => db.prepare('SELECT * FROM heartbeats WHERE token = ?').get(token);
+  // Statements on the ping path, prepared once.
+  const stmt = {
+    get: db.prepare('SELECT * FROM heartbeats WHERE id = ?'),
+    byToken: db.prepare('SELECT * FROM heartbeats WHERE token = ?'),
+    markStart: db.prepare('UPDATE heartbeats SET last_start_at = ? WHERE id = ?'),
+    pingPaused: db.prepare('UPDATE heartbeats SET last_ping_at = ?, last_start_at = NULL, last_duration_ms = COALESCE(?, last_duration_ms) WHERE id = ?'),
+    pingState: db.prepare(`UPDATE heartbeats SET state = ?, last_ping_at = ?, last_start_at = NULL,
+        last_duration_ms = COALESCE(?, last_duration_ms), due_at = ? WHERE id = ?`),
+    insertPing: db.prepare('INSERT INTO pings (heartbeat_id, ts, kind, duration_ms) VALUES (?, ?, ?, ?)'),
+    pingCutoff: db.prepare('SELECT id FROM pings WHERE heartbeat_id = ? ORDER BY id DESC LIMIT 1 OFFSET ?'),
+    trimPings: db.prepare('DELETE FROM pings WHERE heartbeat_id = ? AND id <= ?'),
+  };
+  const get = (id) => stmt.get.get(id);
+  const byToken = (token) => stmt.byToken.get(token);
 
   // Emails go out in the background so a ping answers at once.
   function background(promise) {
@@ -131,7 +130,7 @@ export function createHeartbeats({
 
     if (kind === 'start') {
       db.transaction(() => {
-        db.prepare('UPDATE heartbeats SET last_start_at = ? WHERE id = ?').run(now, hb.id);
+        stmt.markStart.run(now, hb.id);
         insertPing(hb.id, now, 'start', null);
       })();
       return true;
@@ -145,8 +144,7 @@ export function createHeartbeats({
     db.transaction(() => {
       insertPing(hb.id, now, kind, duration);
       if (hb.paused) {
-        db.prepare('UPDATE heartbeats SET last_ping_at = ?, last_start_at = NULL, last_duration_ms = COALESCE(?, last_duration_ms) WHERE id = ?')
-          .run(now, duration, hb.id);
+        stmt.pingPaused.run(now, duration, hb.id);
         return;
       }
       let state;
@@ -163,9 +161,7 @@ export function createHeartbeats({
           closed = closeIncident(db, 'heartbeat', hb.id, now);
         }
       }
-      db.prepare(`UPDATE heartbeats SET state = ?, last_ping_at = ?, last_start_at = NULL,
-        last_duration_ms = COALESCE(?, last_duration_ms), due_at = ? WHERE id = ?`)
-        .run(state, now, duration, computeDueAt(hb, now), hb.id);
+      stmt.pingState.run(state, now, duration, computeDueAt(hb, now), hb.id);
     })();
 
     if (transition === 'down') {
@@ -179,9 +175,9 @@ export function createHeartbeats({
   }
 
   function insertPing(id, ts, kind, duration) {
-    db.prepare('INSERT INTO pings (heartbeat_id, ts, kind, duration_ms) VALUES (?, ?, ?, ?)').run(id, ts, kind, duration);
-    const cutoff = db.prepare('SELECT id FROM pings WHERE heartbeat_id = ? ORDER BY id DESC LIMIT 1 OFFSET ?').get(id, PINGS_KEPT);
-    if (cutoff) db.prepare('DELETE FROM pings WHERE heartbeat_id = ? AND id <= ?').run(id, cutoff.id);
+    stmt.insertPing.run(id, ts, kind, duration);
+    const cutoff = stmt.pingCutoff.get(id, PINGS_KEPT);
+    if (cutoff) stmt.trimPings.run(id, cutoff.id);
   }
 
   function sweepOnce() {

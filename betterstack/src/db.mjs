@@ -109,6 +109,20 @@ export function closeIncident(db, kind, refId, endedAt) {
   return { ...open, ended_at: endedAt };
 }
 
+/** The latest incidents across monitors and heartbeats, with the check's name (null once deleted). */
+export function recentIncidents(db, limit = 15) {
+  return db.prepare(`
+    SELECT i.*, COALESCE(m.name, h.name) AS name FROM incidents i
+    LEFT JOIN monitors m ON i.kind = 'monitor' AND m.id = i.ref_id
+    LEFT JOIN heartbeats h ON i.kind = 'heartbeat' AND h.id = i.ref_id
+    ORDER BY i.started_at DESC LIMIT ?`).all(limit);
+}
+
+/** The latest incidents of one monitor or heartbeat, newest first. */
+export function incidentsFor(db, kind, refId, limit = 20) {
+  return db.prepare('SELECT * FROM incidents WHERE kind = ? AND ref_id = ? ORDER BY id DESC LIMIT ?').all(kind, refId, limit);
+}
+
 export function deleteIncidents(db, kind, refId) {
   db.prepare('DELETE FROM incidents WHERE kind = ? AND ref_id = ?').run(kind, refId);
 }

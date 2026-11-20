@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 
 import { createAuth, sameOriginOnly } from './auth.mjs';
+import { incidentsFor, recentIncidents } from './db.mjs';
 import { validateMonitor } from './checks.mjs';
 import { createNotifier } from './notify.mjs';
 import { createScheduler } from './scheduler.mjs';
@@ -110,11 +111,7 @@ export function createApp({
       uptime: uptime24h(db, m.id, now),
       latencies: recentChecks(db, m.id, 30).map((c) => c.latency_ms),
     }));
-    const incidents = db.prepare(`
-      SELECT i.*, COALESCE(m.name, h.name) AS name FROM incidents i
-      LEFT JOIN monitors m ON i.kind = 'monitor' AND m.id = i.ref_id
-      LEFT JOIN heartbeats h ON i.kind = 'heartbeat' AND h.id = i.ref_id
-      ORDER BY i.started_at DESC LIMIT 15`).all();
+    const incidents = recentIncidents(db, 15);
     html(res, views.dashboard({ monitors, heartbeats: heartbeats.list(), incidents, now }));
   });
 
@@ -144,7 +141,7 @@ export function createApp({
     html(res, views.monitorDetail({
       monitor: m,
       checks: recentChecks(db, m.id, 50),
-      incidents: db.prepare("SELECT * FROM incidents WHERE kind = 'monitor' AND ref_id = ? ORDER BY id DESC LIMIT 20").all(m.id),
+      incidents: incidentsFor(db, 'monitor', m.id, 20),
       uptime: uptime24h(db, m.id, now),
       now,
     }));
@@ -219,7 +216,7 @@ export function createApp({
     html(res, views.heartbeatDetail({
       hb,
       pings: heartbeats.recentPings(hb.id, 30),
-      incidents: db.prepare("SELECT * FROM incidents WHERE kind = 'heartbeat' AND ref_id = ? ORDER BY id DESC LIMIT 20").all(hb.id),
+      incidents: incidentsFor(db, 'heartbeat', hb.id, 20),
       pingBase: pingBase(req),
       now: clock.now(),
     }));
