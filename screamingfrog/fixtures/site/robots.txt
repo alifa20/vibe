@@ -1,0 +1,5 @@
+# Harbour Lane Bakery
+User-agent: *
+Disallow: /private/
+
+Sitemap: {{ORIGIN}}/sitemap.xml
