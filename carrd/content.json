@@ -1,6 +1,6 @@
 {
   "site": {
-    "url": "https://example.com",
+    "url": "https://alifa20.github.io/vibe/carrd",
     "title": null,
     "description": null,
     "lang": "en",
@@ -17,32 +17,33 @@
   "headline": "Software engineer building calm, careful tools for people who do serious work.",
   "about": "I design and build web products end to end — from the data model up to the last hairline border. Most of my time goes into interfaces that people live in all day, where small frictions compound and taste is a feature. Previously in fintech and practice management; currently interested in local-first software, editorial layout on the web, and making things that stay fast for years.",
   "avatar": "assets/avatar.svg",
-  "email": "hello@example.com",
 
   "social": [
-    { "label": "Email",    "url": "mailto:hello@example.com" },
-    { "label": "GitHub",   "url": "https://github.com/yourhandle" },
-    { "label": "LinkedIn", "url": "https://www.linkedin.com/in/yourhandle" },
-    { "label": "X",        "url": "https://x.com/yourhandle" }
+    { "label": "GitHub", "url": "https://github.com/alifa20" }
   ],
 
   "work": {
     "label": "Selected work",
     "projects": [
       {
-        "title": "Ledgerline",
-        "description": "A double-entry bookkeeping engine with a keyboard-first review queue. Reconciles 40k transactions a month for a small accounting practice.",
-        "url": "https://example.com/ledgerline"
+        "title": "teleprompter",
+        "description": "A local, single-page teleprompter in React and TypeScript. Scripts and settings stay in your browser: no backend, no accounts, no telemetry.",
+        "url": "https://alifa20.github.io/vibe/teleprompter/"
       },
       {
-        "title": "Quiet RSS",
-        "description": "A reader that fetches once an hour and never notifies you. Local-first, offline, syncs over a single file.",
-        "url": "https://example.com/quiet-rss"
+        "title": "golinks",
+        "description": "A self-hosted link shortener with click analytics and QR codes on Cloudflare Workers. KV holds the slugs, D1 holds the click log.",
+        "url": "https://alifa20.github.io/vibe/bitly/"
       },
       {
-        "title": "Typeset",
-        "description": "A tiny layout engine for print-quality PDFs from Markdown — footnotes, widows and orphans, real small caps.",
-        "url": "https://example.com/typeset"
+        "title": "zcal",
+        "description": "A private, single-user scheduling tool: read one calendar, publish free time, let someone reserve a slot, and write the meeting back.",
+        "url": "https://alifa20.github.io/vibe/zcal/"
+      },
+      {
+        "title": "qrforge",
+        "description": "A self-hosted QR code generator with dynamic, editable codes and scan tracking. One Node process, one SQLite file.",
+        "url": "https://alifa20.github.io/vibe/qr/"
       }
     ]
   },
@@ -51,6 +52,7 @@
     "label": "Contact",
     "heading": "Say hello",
     "intro": "Have something you'd like built, or just want to compare notes? Write to me here and I'll reply within a couple of days.",
+    "emailIntro": "Have something you'd like built, or just want to compare notes? Send me an email and I'll reply within a couple of days.",
     "button": "Send message",
     "successTitle": "Message sent.",
     "successBody": "Thank you — it landed safely. I'll get back to you at the address you gave."

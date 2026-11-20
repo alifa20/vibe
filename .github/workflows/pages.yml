@@ -1,0 +1,64 @@
+name: pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Deploys (pushes to main, manual runs) share one queue: a queued deploy is
+# replaced by a newer one, but a deploy that has started always finishes.
+# Pull requests get their own group per PR so they can never cancel a pending
+# deploy, and a newer push to the same PR cancels its older check run.
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('pages-pr-{0}', github.ref) || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: teleprompter/package-lock.json
+
+      - name: Install teleprompter dependencies
+        run: npm ci
+        working-directory: teleprompter
+
+      - name: Test the site assembler
+        run: node --test 'site/*.test.mjs'
+
+      - name: Build demos and assemble _site/
+        run: node site/build.mjs
+
+      - name: Check every inline style and script is allowed by its CSP
+        run: node site/check-csp.mjs
+
+      - uses: actions/configure-pages@v5
+        if: github.event_name != 'pull_request'
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
