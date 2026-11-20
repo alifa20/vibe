@@ -3,7 +3,7 @@
 //
 //   extract(html, { url, headers }) -> {
 //     title, metaDescription, h1s, canonical, metaRobots, xRobotsTag,
-//     noindex, nofollow, imagesMissingAlt, links: [url], base
+//     noindex, nofollow, imagesMissingAlt, links: [url]
 //   }
 
 import { load } from "cheerio";
@@ -73,6 +73,5 @@ export function extract(html, { url, headers = {} } = {}) {
     nofollow: tokens.has("nofollow") || tokens.has("none"),
     imagesMissingAlt,
     links,
-    base,
   };
 }

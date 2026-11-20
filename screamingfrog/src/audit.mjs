@@ -6,6 +6,8 @@
 // Issues come out ordered by ISSUE_TYPES, then by URL, so the same crawl
 // always produces the same list.
 
+import { compareUrls } from "./url.mjs";
+
 export const TITLE_MAX = 60;
 export const DESCRIPTION_MAX = 155;
 
@@ -37,7 +39,8 @@ const issue = (type, fields) => ({ type, severity: ISSUE_TYPES[type].severity, .
 /** A page whose HTML was parsed: a direct 2xx HTML response. */
 const parsed = (p) => p.title !== undefined;
 const isBroken = (status) => status === 0 || status >= 400;
-const statusText = (p) => (p.error && !p.status ? p.error : String(p.status));
+/** The error when the request failed outright, else the status (or `shown`). */
+const statusText = (p, shown = p.status) => (p.error && !p.status ? p.error : String(shown));
 const blank = (s) => s == null || String(s).trim() === "";
 
 function linkSources(pages) {
@@ -52,16 +55,13 @@ function linkSources(pages) {
 }
 
 function duplicates(pages, field, type) {
-  const groups = new Map();
-  for (const p of pages) {
-    const v = p[field];
-    if (blank(v)) continue;
-    if (!groups.has(v)) groups.set(v, []);
-    groups.get(v).push(p.url);
-  }
+  const groups = Map.groupBy(pages.filter((p) => !blank(p[field])), (p) => p[field]);
   return [...groups]
-    .filter(([, urls]) => urls.length > 1)
-    .map(([value, urls]) => issue(type, { url: [...urls].sort()[0], urls: [...urls].sort(), detail: value }));
+    .filter(([, group]) => group.length > 1)
+    .map(([value, group]) => {
+      const urls = group.map((p) => p.url).sort();
+      return issue(type, { url: urls[0], urls, detail: value });
+    });
 }
 
 export function whyNotIndexable(p) {
@@ -94,7 +94,7 @@ export function audit(result) {
     if (e.redirectLoop) {
       out.push(issue("redirect-loop", { url: e.url, detail: e.redirects.map((h) => h.url).join(" → ") + " → " + e.redirects.at(-1).location, sources: sources.get(e.url) ?? [] }));
     } else if (isBroken(e.finalStatus ?? e.status)) {
-      out.push(issue("broken-external-link", { url: e.url, detail: e.error && !e.status ? e.error : String(e.finalStatus ?? e.status), sources: sources.get(e.url) ?? [] }));
+      out.push(issue("broken-external-link", { url: e.url, detail: statusText(e, e.finalStatus ?? e.status), sources: sources.get(e.url) ?? [] }));
     }
   }
 
@@ -147,5 +147,5 @@ export function audit(result) {
     if (why) out.push(issue("sitemap-non-indexable", { url, detail: why }));
   }
 
-  return out.sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type) || (a.url < b.url ? -1 : a.url > b.url ? 1 : 0));
+  return out.sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type) || compareUrls(a, b));
 }

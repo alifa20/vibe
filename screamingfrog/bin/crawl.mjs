@@ -29,9 +29,9 @@ export function parseSize(s) {
   return Math.round(Number(m[1]) * { b: 1, k: 1024, m: 1024 ** 2, g: 1024 ** 3 }[unit]);
 }
 
-const positiveInt = (name, v) => {
+const wholeNumber = (name, v, { min = 1 } = {}) => {
   const n = Number(v);
-  if (!Number.isInteger(n) || n < (name === "delay" || name === "max-depth" ? 0 : 1)) throw new Error(`--${name} needs a whole number, got "${v}"`);
+  if (!Number.isInteger(n) || n < min) throw new Error(`--${name} needs a whole number, got "${v}"`);
   return n;
 };
 
@@ -57,10 +57,10 @@ async function main() {
   if (!/^https?:\/\//i.test(start)) throw new Error(`start URL must begin with http:// or https://, got "${start}"`);
 
   const options = {};
-  if (values["max-pages"]) options.maxPages = positiveInt("max-pages", values["max-pages"]);
-  if (values["max-depth"]) options.maxDepth = positiveInt("max-depth", values["max-depth"]);
-  if (values.concurrency) options.concurrency = positiveInt("concurrency", values.concurrency);
-  if (values.delay) options.delay = positiveInt("delay", values.delay);
+  if (values["max-pages"]) options.maxPages = wholeNumber("max-pages", values["max-pages"]);
+  if (values["max-depth"]) options.maxDepth = wholeNumber("max-depth", values["max-depth"], { min: 0 });
+  if (values.concurrency) options.concurrency = wholeNumber("concurrency", values.concurrency);
+  if (values.delay) options.delay = wholeNumber("delay", values.delay, { min: 0 });
   if (values["max-body-size"]) options.maxBodySize = parseSize(values["max-body-size"]);
   if (values["user-agent"]) options.userAgent = values["user-agent"];
   options.onProgress = ({ depth, queued, done }) =>

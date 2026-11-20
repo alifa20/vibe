@@ -8,15 +8,14 @@
 // opts: method, userAgent, timeoutMs, maxBodySize, sleep(ms), now(), fetchImpl.
 // status 0 means the request failed (DNS, refused, timeout); `error` says why.
 
+import { normaliseUrl } from "./url.mjs";
+
 export const MAX_REDIRECTS = 10;
 
-export const realSleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/** Fallbacks for direct callers; crawl() passes its own values (and a longer user agent). */
+export const FETCH_DEFAULTS = { userAgent: "sitecrawl/1.0", timeoutMs: 20000, maxBodySize: 5 * 1024 * 1024 };
 
-const headersToObject = (h) => {
-  const out = {};
-  for (const [k, v] of h) out[k.toLowerCase()] = v;
-  return out;
-};
+export const realSleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function readCapped(res, maxBodySize) {
   const declared = Number(res.headers.get("content-length"));
@@ -44,9 +43,9 @@ async function readCapped(res, maxBodySize) {
 export async function fetchOnce(url, opts = {}) {
   const {
     method = "GET",
-    userAgent = "sitecrawl/1.0",
-    timeoutMs = 20000,
-    maxBodySize = 5 * 1024 * 1024,
+    userAgent = FETCH_DEFAULTS.userAgent,
+    timeoutMs = FETCH_DEFAULTS.timeoutMs,
+    maxBodySize = FETCH_DEFAULTS.maxBodySize,
     now = () => performance.now(),
     fetchImpl = fetch,
   } = opts;
@@ -58,7 +57,7 @@ export async function fetchOnce(url, opts = {}) {
       headers: { "user-agent": userAgent, accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
       signal: AbortSignal.timeout(timeoutMs),
     });
-    const headers = headersToObject(res.headers);
+    const headers = Object.fromEntries(res.headers);
     const isRedirect = res.status >= 300 && res.status < 400 && headers.location;
     let read = { body: Buffer.alloc(0), size: 0, tooLarge: false };
     if (method === "HEAD" || isRedirect) await res.body?.cancel().catch(() => {});
@@ -107,9 +106,7 @@ export async function fetchFollowing(url, opts = {}) {
     if (!res.location) return { hops, final: res, loop: false, tooManyRedirects: false };
     let next;
     try {
-      next = new URL(res.location, current);
-      next.hash = "";
-      next = next.href;
+      next = normaliseUrl(new URL(res.location, current));
     } catch {
       return { hops, final: { ...res, error: `bad Location header: ${res.location}` }, loop: false, tooManyRedirects: false };
     }

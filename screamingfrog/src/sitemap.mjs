@@ -7,6 +7,7 @@
 
 import { gunzipSync } from "node:zlib";
 import { load } from "cheerio";
+import { normaliseUrl } from "./url.mjs";
 
 export function decodeSitemapBody(buf) {
   const b = Buffer.isBuffer(buf) ? buf : Buffer.from(buf ?? "");
@@ -50,15 +51,14 @@ export async function loadSitemaps(startUrls, fetcher, { maxFiles = 50 } = {}) {
     for (const loc of parsed.locs) {
       let abs;
       try {
-        abs = new URL(loc, url);
+        abs = normaliseUrl(new URL(loc, url));
       } catch {
         continue;
       }
-      abs.hash = "";
-      if (parsed.kind === "index") queue.push(abs.href);
-      else if (!seenUrls.has(abs.href)) {
-        seenUrls.add(abs.href);
-        urls.push(abs.href);
+      if (parsed.kind === "index") queue.push(abs);
+      else if (!seenUrls.has(abs)) {
+        seenUrls.add(abs);
+        urls.push(abs);
       }
     }
   }

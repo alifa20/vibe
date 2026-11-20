@@ -15,7 +15,7 @@
 //   nofollow, imagesMissingAlt, links }
 
 import { extract } from "./extract.mjs";
-import { fetchFollowing, realSleep } from "./fetch.mjs";
+import { FETCH_DEFAULTS, fetchFollowing, realSleep } from "./fetch.mjs";
 import { robotsFor } from "./robots.mjs";
 import { loadSitemaps } from "./sitemap.mjs";
 import { normaliseUrl, sameOrigin, isHttp } from "./url.mjs";
@@ -26,8 +26,8 @@ export const DEFAULTS = {
   concurrency: 3,
   externalConcurrency: 2,
   delay: 0,
-  maxBodySize: 5 * 1024 * 1024,
-  timeoutMs: 20000,
+  maxBodySize: FETCH_DEFAULTS.maxBodySize,
+  timeoutMs: FETCH_DEFAULTS.timeoutMs,
   userAgent: "sitecrawl/1.0 (+https://github.com/alifa20/vibe/tree/main/screamingfrog)",
   checkExternal: true,
 };
@@ -47,6 +47,8 @@ export async function pool(items, n, worker) {
 }
 
 const isHtml = (contentType) => /\b(text\/html|application\/xhtml\+xml)\b/i.test(contentType || "");
+/** A redirect loop or overlong chain never reaches a final response worth reporting. */
+const settled = (res) => !(res.loop || res.tooManyRedirects);
 const pathOf = (url) => {
   const u = new URL(url);
   return u.pathname + u.search;
@@ -101,8 +103,8 @@ export async function crawl(startUrl, options = {}) {
       redirects: res.hops,
       redirectLoop: res.loop,
       tooManyRedirects: res.tooManyRedirects,
-      finalUrl: res.hops.length ? (res.loop || res.tooManyRedirects ? null : final.url) : url,
-      finalStatus: res.loop || res.tooManyRedirects ? null : final.status,
+      finalUrl: res.hops.length ? (settled(res) ? final.url : null) : url,
+      finalStatus: settled(res) ? final.status : null,
       contentType: final.headers["content-type"] ?? null,
       size: final.size,
       timeMs: final.timeMs,
@@ -110,9 +112,7 @@ export async function crawl(startUrl, options = {}) {
       retried: Boolean(final.retried),
     });
     if (!res.hops.length && final.status >= 200 && final.status < 300 && !final.tooLarge && isHtml(record.contentType)) {
-      const fields = extract(final.body.toString("utf8"), { url, headers: final.headers });
-      delete fields.base;
-      Object.assign(record, fields);
+      Object.assign(record, extract(final.body.toString("utf8"), { url, headers: final.headers }));
     }
     return record;
   };
@@ -149,8 +149,8 @@ export async function crawl(startUrl, options = {}) {
       }
       return {
         url,
-        status: res.loop || res.tooManyRedirects ? res.hops[0].status : res.final.status,
-        finalStatus: res.loop || res.tooManyRedirects ? null : res.final.status,
+        status: settled(res) ? res.final.status : res.hops[0].status,
+        finalStatus: settled(res) ? res.final.status : null,
         redirects: res.hops,
         redirectLoop: res.loop,
         error: res.final.error,

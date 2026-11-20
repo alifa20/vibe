@@ -4,8 +4,7 @@
 //   resolveLink(href, base)  -> string | null  absolute, normalised http(s) URL, or null to skip
 //   sameOrigin(a, b)         -> boolean
 //   isHttp(url)              -> boolean
-
-const SKIPPED = /^\s*(mailto|tel|javascript|data):/i;
+//   compareUrls(a, b)        -> sort comparator on the .url field
 
 /** WHATWG URL already lowercases scheme and host and drops default ports. */
 export function normaliseUrl(input) {
@@ -16,7 +15,7 @@ export function normaliseUrl(input) {
 
 export function resolveLink(href, base) {
   const raw = String(href ?? "").trim();
-  if (!raw || raw.startsWith("#") || SKIPPED.test(raw)) return null;
+  if (!raw || raw.startsWith("#")) return null;
   let u;
   try {
     u = new URL(raw, base);
@@ -44,3 +43,5 @@ export function isHttp(url) {
     return false;
   }
 }
+
+export const compareUrls = (a, b) => (a.url < b.url ? -1 : a.url > b.url ? 1 : 0);

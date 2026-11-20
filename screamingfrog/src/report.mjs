@@ -12,6 +12,7 @@
 
 import { createHash } from "node:crypto";
 import { ISSUE_TYPES, whyNotIndexable } from "./audit.mjs";
+import { compareUrls } from "./url.mjs";
 
 export const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
@@ -93,7 +94,7 @@ export function renderReport(result, issues, options = {}) {
       ? `<a class="url" href="${esc(u)}" rel="nofollow noopener noreferrer">${esc(u)}</a>`
       : `<span class="url">${esc(u)}</span>`;
 
-  const pages = [...result.pages].sort((a, b) => statusKey(a) - statusKey(b) || (a.url < b.url ? -1 : a.url > b.url ? 1 : 0));
+  const pages = [...result.pages].sort((a, b) => statusKey(a) - statusKey(b) || compareUrls(a, b));
   const byType = new Map(Object.keys(ISSUE_TYPES).map((t) => [t, []]));
   for (const i of issues) byType.get(i.type)?.push(i);
   const bySeverity = Object.fromEntries(SEVERITIES.map((s) => [s, issues.filter((i) => i.severity === s).length]));
@@ -166,7 +167,7 @@ ${items}
     .join("\n");
 
   const externalRows = [...result.external]
-    .sort((a, b) => (a.url < b.url ? -1 : a.url > b.url ? 1 : 0))
+    .sort(compareUrls)
     .map((e) => {
       const status = e.finalStatus ?? e.status;
       return `<tr><td class="status s${String(status)[0]}">${status ? esc(status) : "failed"}</td><td>${url(e.url)}</td><td>${esc(e.error ?? (e.redirects?.length ? `${e.redirects.length} redirect${e.redirects.length === 1 ? "" : "s"}` : ""))}</td></tr>`;
