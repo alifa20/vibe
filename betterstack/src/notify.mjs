@@ -15,6 +15,23 @@ export function smtpFromEnv(env = process.env) {
   return smtp;
 }
 
+/**
+ * nodemailer options for the SMTP settings. nodemailer's own timeouts run to
+ * minutes (2 min connect, 10 min idle socket); a hung mail server must give
+ * up long before that.
+ */
+export function smtpTransportOptions(smtp) {
+  return {
+    host: smtp.host,
+    port: smtp.port,
+    secure: smtp.secure,
+    auth: smtp.user ? { user: smtp.user, pass: smtp.pass } : undefined,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
+  };
+}
+
 export function formatDuration(ms) {
   let s = Math.max(0, Math.round(ms / 1000));
   const d = Math.floor(s / 86400); s -= d * 86400;
@@ -41,12 +58,7 @@ export function createNotifier({ smtp = smtpFromEnv(), to = '', baseUrl = '', ma
   function getTransport() {
     if (transport) return transport;
     if (!smtp.enabled) return null;
-    transport = nodemailer.createTransport({
-      host: smtp.host,
-      port: smtp.port,
-      secure: smtp.secure,
-      auth: smtp.user ? { user: smtp.user, pass: smtp.pass } : undefined,
-    });
+    transport = nodemailer.createTransport(smtpTransportOptions(smtp));
     return transport;
   }
 

@@ -110,6 +110,32 @@ export function createScheduler({
     }
   }
 
+  // The fields runHttpCheck reads. If any changed mid-check, the result
+  // belongs to a configuration that no longer exists.
+  const checkConfigChanged = (a, b) => a.url !== b.url || a.expected !== b.expected || a.timeout_s !== b.timeout_s;
+
+  /** Schedules the next check unless the monitor was paused or deleted meanwhile. */
+  function rescheduleIfActive(id, at) {
+    let m;
+    try {
+      m = getMonitor(db, id);
+    } catch (err) {
+      // Cannot tell; schedule anyway, runCheck re-reads the monitor before checking.
+      logger.error(`[scheduler] could not re-read monitor ${id}: ${err?.message || err}`);
+      return schedule(id, at);
+    }
+    if (m && !m.paused) schedule(id, at);
+  }
+
+  /** Alerts run outside the check slot and never delay the next check. */
+  function notifyDetached(send) {
+    const p = Promise.resolve()
+      .then(send)
+      .catch((err) => logger.error(`[scheduler] notification failed: ${err?.stack || err}`))
+      .finally(() => pending.delete(p));
+    pending.add(p);
+  }
+
   async function runCheck(id) {
     const before = getMonitor(db, id);
     if (!before || before.paused) return;
@@ -120,41 +146,50 @@ export function createScheduler({
     // The monitor may have been edited, paused or deleted while the check ran.
     const m = getMonitor(db, id);
     if (!m || m.paused) return;
+    if (checkConfigChanged(before, m)) {
+      // Discard the stale result and check the edited config straight away
+      // (monitorChanged's own re-check was dropped while this one ran).
+      schedule(id, now);
+      return;
+    }
 
     const { next, transition } = applyCheckResult(m, result.ok, now);
     const nextCheckAt = now + m.interval_s * 1000 + jitter(m);
-    let closed = null;
 
-    db.transaction(() => {
-      recordCheck(id, now, result);
-      saveResult.run({
-        state: next.state ?? m.state,
-        fail_streak: next.fail_streak,
-        ok_streak: next.ok_streak,
-        fail_since: 'fail_since' in next ? next.fail_since : m.fail_since,
-        now,
-        status: result.status,
-        latency: result.latencyMs,
-        error: result.error,
-        nextCheckAt,
-        id,
-      });
-      if (transition === 'down') openIncident(db, 'monitor', id, next.fail_since, result.error);
-      if (transition === 'up') closed = closeIncident(db, 'monitor', id, now);
-    })();
+    try {
+      let closed = null;
+      db.transaction(() => {
+        recordCheck(id, now, result);
+        saveResult.run({
+          state: next.state ?? m.state,
+          fail_streak: next.fail_streak,
+          ok_streak: next.ok_streak,
+          fail_since: 'fail_since' in next ? next.fail_since : m.fail_since,
+          now,
+          status: result.status,
+          latency: result.latencyMs,
+          error: result.error,
+          nextCheckAt,
+          id,
+        });
+        if (transition === 'down') openIncident(db, 'monitor', id, next.fail_since, result.error);
+        if (transition === 'up') closed = closeIncident(db, 'monitor', id, now);
+      })();
 
-    if (transition === 'down') {
-      logger.warn(`[monitor] ${m.name} is DOWN: ${result.error}`);
-      await notifier.monitorDown(m, result.error, next.fail_since);
-    } else if (transition === 'up') {
-      const since = closed?.started_at ?? m.fail_since ?? now;
-      logger.info(`[monitor] ${m.name} is UP again`);
-      await notifier.monitorUp(m, now - since);
+      if (transition === 'down') {
+        logger.warn(`[monitor] ${m.name} is DOWN: ${result.error}`);
+        notifyDetached(() => notifier.monitorDown(m, result.error, next.fail_since));
+      } else if (transition === 'up') {
+        const since = closed?.started_at ?? m.fail_since ?? now;
+        logger.info(`[monitor] ${m.name} is UP again`);
+        notifyDetached(() => notifier.monitorUp(m, now - since));
+      }
+
+      if (hooks.afterCheck) await hooks.afterCheck(getMonitor(db, id), result, now);
+    } finally {
+      // Whatever threw above, the monitor must not drop off the schedule.
+      rescheduleIfActive(id, nextCheckAt);
     }
-
-    if (hooks.afterCheck) await hooks.afterCheck(getMonitor(db, id), result, now);
-
-    schedule(id, nextCheckAt);
   }
 
   return {

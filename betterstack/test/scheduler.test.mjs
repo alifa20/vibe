@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { openDb } from '../src/db.mjs';
-import { createMonitor, getMonitor } from '../src/monitors.mjs';
+import { createMonitor, getMonitor, updateMonitor } from '../src/monitors.mjs';
 import { createNotifier } from '../src/notify.mjs';
 import { createScheduler } from '../src/scheduler.mjs';
 import { fakeMailer, fakeTime, quietLogger, targetServer } from './helpers.mjs';
@@ -176,4 +176,101 @@ test('a stopped port alerts once and recovers once when it comes back', async (t
   await advance(60_000);
   assert.deepEqual(mailer.sent.map((m) => m.subject), ['[uptime] DOWN: api', '[uptime] UP: api']);
   assert.match(mailer.sent[1].text, /back up after 4m of downtime/);
+});
+
+test('a monitor edited while its check is in flight discards the old result and checks the new config at once', async (t) => {
+  const oldTarget = await targetServer(500);
+  const newTarget = await targetServer(200);
+  t.after(oldTarget.close);
+  t.after(newTarget.close);
+  const { db, time, mailer, scheduler, advance } = setup();
+  const id = createMonitor(db, monitorValues(oldTarget.url, { down_after: 1 }), time.clock.now());
+  scheduler.start();
+  t.after(scheduler.stop);
+
+  // The edit lands while the request to the old URL is still open.
+  oldTarget.state.onRequest = (req, res) => {
+    updateMonitor(db, id, monitorValues(newTarget.url, { down_after: 1 }), time.clock.now());
+    scheduler.monitorChanged(id);
+    res.writeHead(500);
+    res.end('old');
+  };
+  await advance(0);
+  assert.equal(oldTarget.state.hits, 1);
+  assert.equal(newTarget.state.hits, 1, 'the edited config is checked straight away, not a full interval later');
+  const statuses = db.prepare('SELECT status_code FROM checks WHERE monitor_id = ? ORDER BY id').all(id).map((r) => r.status_code);
+  assert.deepEqual(statuses, [200], 'the old URL result is not recorded against the new config');
+  assert.equal(mailer.sent.length, 0, 'no down alert for a URL that is no longer monitored');
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM incidents').get().n, 0);
+  assert.equal(getMonitor(db, id).state, 'up');
+});
+
+test('a hook that throws once does not leave the monitor unscheduled', async (t) => {
+  const target = await targetServer(200);
+  t.after(target.close);
+  const db = openDb(':memory:');
+  const time = fakeTime();
+  const logger = quietLogger();
+  const notifier = createNotifier({ mailer: fakeMailer(), to: 'ops@example.com', logger });
+  let thrown = false;
+  const afterCheck = async () => {
+    if (!thrown) { thrown = true; throw new Error('tls probe exploded'); }
+  };
+  const scheduler = createScheduler({ db, notifier, clock: time.clock, timers: time.timers, random: () => 0, logger, hooks: { afterCheck } });
+  const id = createMonitor(db, monitorValues(target.url), time.clock.now());
+  scheduler.start();
+  t.after(scheduler.stop);
+
+  await time.advance(0, () => scheduler.idle());
+  assert.ok(thrown);
+  assert.ok(logger.lines.error.some((l) => /tls probe exploded/.test(l)));
+  assert.equal(scheduler.scheduledAt(id), true, 'still scheduled after the hook threw');
+  await time.advance(60_000, () => scheduler.idle());
+  assert.equal(target.state.hits, 2);
+});
+
+test('a notifier that throws does not leave the monitor unscheduled', async (t) => {
+  const target = await targetServer(500);
+  t.after(target.close);
+  const db = openDb(':memory:');
+  const time = fakeTime();
+  const logger = quietLogger();
+  const notifier = { monitorDown() { throw new Error('notifier bug'); }, monitorUp() {} };
+  const scheduler = createScheduler({ db, notifier, clock: time.clock, timers: time.timers, random: () => 0, logger });
+  const id = createMonitor(db, monitorValues(target.url, { down_after: 1 }), time.clock.now());
+  scheduler.start();
+  t.after(scheduler.stop);
+
+  await time.advance(0, () => scheduler.idle());
+  assert.equal(getMonitor(db, id).state, 'down');
+  assert.equal(scheduler.scheduledAt(id), true);
+  await time.advance(60_000, () => scheduler.idle());
+  assert.equal(target.state.hits, 2);
+});
+
+test('a hung alert email does not delay rescheduling or hold the check slot', async (t) => {
+  const target = await targetServer(500);
+  t.after(target.close);
+  const db = openDb(':memory:');
+  const time = fakeTime();
+  const logger = quietLogger();
+  let release;
+  let called;
+  const notifyCalled = new Promise((resolve) => { called = resolve; });
+  const hung = new Promise((resolve) => { release = resolve; });
+  const notifier = { monitorDown() { called(); return hung; }, monitorUp() {} };
+  const scheduler = createScheduler({ db, notifier, clock: time.clock, timers: time.timers, random: () => 0, logger });
+  const id = createMonitor(db, monitorValues(target.url, { down_after: 1 }), time.clock.now() + 1_000);
+  scheduler.start();
+  t.after(scheduler.stop);
+  t.after(() => release());
+
+  let finished = false;
+  scheduler.runCheck(id).then(() => { finished = true; });
+  await notifyCalled;
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(time.pending().map((p) => p.at - time.clock.now()), [60_000], 'rescheduled while the email is still sending');
+  assert.equal(finished, true, 'the check finished without waiting for the email');
+  release();
+  await scheduler.idle();
 });

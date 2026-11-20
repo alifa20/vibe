@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createNotifier, formatDuration, smtpFromEnv } from '../src/notify.mjs';
+import { createNotifier, formatDuration, smtpFromEnv, smtpTransportOptions } from '../src/notify.mjs';
 import { fakeMailer, quietLogger } from './helpers.mjs';
 
 const monitor = { id: 3, name: 'shop', url: 'https://shop.example/' };
@@ -59,4 +59,14 @@ test('formatDuration', () => {
   assert.equal(formatDuration(42_000), '42s');
   assert.equal(formatDuration(180_000), '3m');
   assert.equal(formatDuration(90_061_000), '1d 1h');
+});
+
+test('the SMTP transport has connection, greeting and socket timeouts', () => {
+  const opts = smtpTransportOptions({ host: 'mail.example', port: 587, secure: false, user: 'u', pass: 'p' });
+  assert.equal(opts.host, 'mail.example');
+  assert.deepEqual(opts.auth, { user: 'u', pass: 'p' });
+  assert.equal(opts.connectionTimeout, 10_000);
+  assert.equal(opts.greetingTimeout, 10_000);
+  assert.equal(opts.socketTimeout, 20_000);
+  assert.equal(smtpTransportOptions({ host: 'h', port: 25, secure: false, user: '' }).auth, undefined);
 });
